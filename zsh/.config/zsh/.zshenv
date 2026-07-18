@@ -1,5 +1,9 @@
 # ~/.config/zsh/.zshenv
 
+# ---------- Zsh directories ----------
+# Point zsh to config in ~/.config instead of $HOME
+export ZDOTDIR="$HOME/.config/zsh"
+
 # ---------- XDG base directories ----------
 # Centralizes config/cache/data locations
 export XDG_CONFIG_HOME="$HOME/.config"
@@ -9,8 +13,8 @@ export XDG_STATE_HOME="$HOME/.local/state"
 
 # ---------- Editor ----------
 # Default editor used by git, crontab, etc.
-export EDITOR="nano"
-export VISUAL="nano"
+export EDITOR="micro"
+export VISUAL="micro"
 
 # ---------- Pager ----------
 if command -v bat >/dev/null 2>&1; then

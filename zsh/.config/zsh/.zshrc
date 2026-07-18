@@ -126,3 +126,11 @@ if [[ -n "$KITTY_INSTALLATION_DIR" ]]; then
   kitty-integration
   unfunction kitty-integration
 fi
+
+# pnpm
+export PNPM_HOME="/home/vgonz/.local/share/pnpm"
+case ":$PATH:" in
+  *":$PNPM_HOME/bin:"*) ;;
+  *) export PATH="$PNPM_HOME/bin:$PATH" ;;
+esac
+# pnpm end
