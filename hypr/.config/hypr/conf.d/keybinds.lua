@@ -9,12 +9,14 @@ local mainMod = "SUPER"
 hl.bind(mainMod .. " + T", hl.dsp.exec_cmd(programs.terminal))
 hl.bind(mainMod .. " + F", hl.dsp.exec_cmd(programs.file_manager))
 hl.bind(mainMod .. " + B", hl.dsp.exec_cmd(programs.browser))
-hl.bind(mainMod .. " + M", hl.dsp.exit())
+
 
 -- ── Noctalia panels (IPC: noctalia msg panel-toggle <id>) ────
-hl.bind(mainMod .. " + SPACE", hl.dsp.exec_cmd("noctalia msg panel-toggle launcher"))
-hl.bind(mainMod .. " + C",     hl.dsp.exec_cmd("noctalia msg panel-toggle clipboard"))
-hl.bind(mainMod .. " + D",     hl.dsp.exec_cmd("noctalia msg panel-toggle control-center"))
+hl.bind(mainMod .. " + SPACE",  hl.dsp.exec_cmd("noctalia msg panel-toggle launcher"))
+hl.bind(mainMod .. " + V",      hl.dsp.exec_cmd("noctalia msg panel-toggle clipboard"))
+hl.bind(mainMod .. " + D",      hl.dsp.exec_cmd("noctalia msg panel-toggle control-center"))
+hl.bind(mainMod .. " + C",      hl.dsp.exec_cmd("noctalia msg settings-toggle"))
+hl.bind(mainMod .. " + ESCAPE", hl.dsp.exec_cmd("noctalia msg panel-toggle session"))
 
 -- ── Window control ───────────────────────────────────
 hl.bind(mainMod .. " + Q", hl.dsp.window.close())

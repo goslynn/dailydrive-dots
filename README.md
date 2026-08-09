@@ -14,6 +14,7 @@ aquí y se aplica al `$HOME` con [GNU stow](https://www.gnu.org/software/stow/).
 - [Monitores](#monitores)
 - [Theming (Catppuccin Mocha)](#theming-catppuccin-mocha)
 - [Wallpaper](#wallpaper)
+- [Discos extraíbles (USB)](#discos-extraíbles-usb)
 - [Keybindings](#keybindings)
 - [Screenshots](#screenshots)
 - [Servicios en autostart](#servicios-en-autostart)
@@ -48,7 +49,10 @@ Al correr `stow -t ~ hypr`, stow crea el symlink `~/.config/hypr →
 
 ```bash
 cd ~/.dotfiles
-for p in */; do stow -t "$HOME" "${p%/}"; done
+for p in */; do
+    [ "${p%/}" = "noctalia" ] && continue   # backup, no se stowea (ver abajo)
+    stow -t "$HOME" "${p%/}"
+done
 ```
 
 **Re-aplicar un paquete (tras añadir archivos):**
@@ -79,21 +83,24 @@ cd ~/.dotfiles && stow -t "$HOME" foo
 | Paquete       | Qué contiene                                       |
 |---------------|----------------------------------------------------|
 | `hypr`        | Hyprland — `hyprland.lua` + `conf.d/` (config en Lua) |
-| `scripts`     | `~/.local/bin/sioyek` — wrapper de escalado XWayland |
+| `scripts`     | `~/.local/bin/`: `sioyek` (escalado XWayland), `noctalia-backup` |
 | `themes`      | Paleta Catppuccin Mocha (fuente única)             |
 | `kitty`       | Terminal                                           |
 | `nvim`        | Editor                                             |
 | `git`         | Git config                                         |
 | `starship`    | Prompt                                             |
 | `zsh`         | Shell: `.zshrc`, `.zshenv` y módulos (ZDOTDIR en `~/.config/zsh`) |
+| `yazi`        | File manager TUI + plugin `mount` (discos extraíbles) |
 | `btop` `mpv`  | Monitor de sistema, reproductor                    |
 | `easyeffects` | Procesador de audio                                |
 | `sioyek`      | Lector de PDF                                      |
 | `brave`       | Flags de arranque (Wayland/ozone)                  |
 | `gtk-3.0` `gtk-4.0` `qt5ct` `qt6ct` `xdg-misc` | Theming/MIME de toolkits |
+| `noctalia`    | **No se stowea** — copia de la config del shell, ver [Noctalia](#noctalia-shell) |
 
-> La config del shell (barra, notificaciones, launcher…) **no** vive aquí:
-> la gestiona noctalia en `~/.config/noctalia`. Ver [Noctalia](#noctalia-shell).
+> La config del shell (barra, notificaciones, launcher…) la escribe noctalia
+> fuera de stow; aquí solo hay un volcado que genera `noctalia-backup`.
+> Ver [Noctalia](#noctalia-shell).
 
 ---
 
@@ -192,9 +199,50 @@ Barra, notificaciones, launcher, clipboard, control center, OSDs, lockscreen,
 screenshots y agente polkit corren en **noctalia** (`noctalia-git` 5.x, AUR).
 Es un binario nativo — **no** usa quickshell.
 
-**Su config no está en este repo**: vive en `~/.config/noctalia/`
-(`settings.json`, `colors.json`, `colorschemes/`, `plugins/`) y se edita desde
-la GUI (`noctalia msg settings-open`), no a mano.
+### Su config: copia de seguridad, no fuente de verdad
+
+noctalia v5 apila dos capas de config, y **la GUI solo escribe en la segunda**:
+
+| Capa                                    | Quién la escribe                      |
+|-----------------------------------------|---------------------------------------|
+| `~/.config/noctalia/*.toml`             | tú, a mano (opcional; hoy no hay ninguno) |
+| `~/.local/state/noctalia/settings.toml` | la GUI / `noctalia msg` — aquí está todo |
+
+Por eso **noctalia no es un paquete stow**: un symlink en `~/.config/noctalia`
+no se sobrescribiría al tocar ajustes —ese es el miedo habitual— sino algo
+peor, se quedaría *tapado* por el state y desactualizado en silencio.
+
+En su lugar, `noctalia-backup` vuelca la config **efectiva** (las dos capas
+fusionadas, vía [`noctalia config export`](https://docs.noctalia.dev/v5/configuration/#exporting-config))
+a `noctalia/.config/noctalia/config.toml`. Sentido único: sistema → repo. El
+árbol imita `$HOME` como cualquier paquete, pero **no se stowea**; editar esa
+copia a mano no cambia nada hasta que la restaures.
+
+```bash
+noctalia msg settings-open      # tocas lo que sea en la GUI
+noctalia-backup                 # vuelca a este repo e imprime el diff
+git -C ~/.dotfiles add noctalia && git commit
+```
+
+**Restaurar** (máquina nueva, o volver a un commit anterior):
+
+```bash
+pkill noctalia                                # con el shell vivo, el state se reescribe
+mkdir -p ~/.config/noctalia
+cp ~/.dotfiles/noctalia/.config/noctalia/config.toml ~/.config/noctalia/
+rm -f ~/.local/state/noctalia/settings.toml   # si no, sus valores tapan la copia
+noctalia config validate                      # debe decir "Config is valid"
+setsid -f noctalia > /tmp/noctalia.log 2>&1   # o simplemente relogin
+```
+
+Lo que **no** guarda el export: los plugins descargados
+(`~/.local/state/noctalia/plugins/`) y las plantillas community — pero sí sus
+IDs (`[plugins] enabled`, `[theme.templates]`), así que noctalia los vuelve a
+bajar solo.
+
+Los `settings.json`, `colors.json` y `plugins.json` que quedan en
+`~/.config/noctalia/` son restos del beta: ninguna versión actual los lee.
+Se pueden borrar.
 
 Reemplaza a `waybar` (barra), `mako` (notificaciones), `quickshell`/minshell
 (shell anterior), `fuzzel` (launcher y picker de clipboard), `nm-applet`
@@ -211,14 +259,16 @@ cableados a keybinds:
 | Comando                                | Bind            |
 |----------------------------------------|-----------------|
 | `panel-toggle launcher`                | `SUPER + SPACE` |
-| `panel-toggle clipboard`               | `SUPER + C`     |
+| `panel-toggle clipboard`               | `SUPER + V`     |
 | `panel-toggle control-center`          | `SUPER + D`     |
+| `panel-toggle session` (menú de energía) | `SUPER + ESC` |
+| `settings-toggle`                      | `SUPER + C`     |
 | `screenshot-region` / `-fullscreen`    | ver [Screenshots](#screenshots) |
 | `volume-*`, `brightness-*`, `media *`  | teclas `XF86*`  |
 
-Útiles sin bind: `settings-open`, `session <lock\|suspend\|logout\|reboot\|shutdown>`,
-`window-switcher`, `wallpaper-set`, `nightlight-toggle`, `caffeine-toggle`,
-`status` (estado en JSON).
+Útiles sin bind: `session <lock\|suspend\|logout\|reboot\|shutdown>` (el menú de
+energía ya cubre esto interactivamente), `window-switcher`, `wallpaper-set`,
+`nightlight-toggle`, `caffeine-toggle`, `status` (estado en JSON).
 
 **Ver logs:** `noctalia msg log-level-set debug`, o relanzarlo en foreground
 (`pkill noctalia && noctalia`).
@@ -271,9 +321,28 @@ Todos los colores viven en `~/.config/themes/catppuccin/mocha/`:
 con `require`— porque vive fuera del árbol de `hypr/` y su nombre chocaría con
 el entry point como nombre de módulo.
 
-Los colores de noctalia son aparte: `~/.config/noctalia/colors.json`, mapeados
-a mano desde `tokens.conf`. No hay motor de templates (matugen y compañía están
-descartados a propósito).
+Los colores de noctalia ya no se mapean a mano (el viejo `colors.json` está
+muerto): usa su paleta *builtin* Catppuccin y desde ahí **genera** ficheros de
+tema, según `[theme.templates]` en su config:
+
+| Genera                              | ¿Cae en el repo? |
+|-------------------------------------|------------------|
+| `kitty/themes/noctalia.conf`        | Sí (dir stoweado) |
+| `btop/themes/noctalia.theme`        | Sí (dir stoweado) |
+| `starship.toml` → `[palettes.noctalia]` | Sí (fichero stoweado) |
+| `~/.config/hypr/noctalia.lua`       | **No** — ver aviso |
+
+Es decir: al cambiar de tema aparecen cambios en `git status` sin que tú hayas
+tocado nada. Es esperado.
+
+> [!WARNING]
+> `hyprland.lua` hace `require("noctalia").apply_theme()`, pero
+> `~/.config/hypr/noctalia.lua` lo genera noctalia y **no está en este repo**
+> (stow desplegó `hypr/` por-fichero, así que el generado se quedó fuera). En
+> una máquina limpia hay que arrancar noctalia una vez para que exista.
+
+La paleta de `~/.config/themes/` sigue siendo la fuente para Hyprland. No hay
+motor de templates externo (matugen y compañía están descartados a propósito).
 
 **Para cambiar de theme:** reemplaza el contenido de estos archivos manteniendo
 nombres y formatos. Después: `hyprctl reload`.
@@ -284,15 +353,184 @@ No hay multi-theming ni cambio en vivo — el switch es manual y único.
 
 ## Wallpaper
 
-Lo gestiona **waypaper-engine** (AUR), con su propia galería/DB en
-`~/.config/waypaper-engine/` — no hay fichero de wallpaper en este repo.
+Lo gestiona **noctalia**: imágenes con su picker de wallpaper integrado,
+vídeo con el plugin oficial **mpvpaper** (`mpv`/`mpvpaper` en PATH). No hay
+daemon aparte en `autostart.lua` — vive dentro del propio proceso de noctalia.
 
-- El daemon (`waypaper-daemon`) arranca desde `conf.d/autostart.lua` y
-  re-aplica el último wallpaper al iniciar sesión.
-- Para cambiarlo, abre el picker gráfico: `waypaper-engine`.
+La galería es `~/Pictures/Wallpapers/` (imágenes y vídeo mezclados; no vive en
+este repo, es contenido de usuario, no config). Ambos pickers apuntan ahí:
 
-Noctalia también sabe de wallpapers (`noctalia msg wallpaper-set|next|random`),
-pero aquí el dueño es waypaper-engine: usar los dos a la vez se pisa.
+- Imágenes: `Settings → Wallpaper` — carpeta de origen, y ahí mismo se activan
+  `Wallpaper` y el widget de barra si se quieren.
+- Vídeo: `Settings → Plugins → Video Wallpaper` (mpvpaper) — campo
+  **Video directory**; por defecto es `~/Videos`, hay que cambiarlo.
+
+Cambiar el wallpaper:
+
+```sh
+noctalia msg wallpaper-set [connector] <path>   # imagen concreta, persiste
+noctalia msg wallpaper-next|previous|random [connector]
+noctalia msg panel-toggle noctalia/mpvpaper:picker   # picker de vídeo
+```
+
+Sustituye a **waypaper-engine** (AUR): tenía su propia galería/DB en
+`~/.config/waypaper-engine/` y un daemon de arranque (`waypaper-daemon`),
+ya quitado de `autostart.lua`. Su galería se migró a `~/Pictures/Wallpapers/`;
+el paquete se puede desinstalar (`pacman -Rns waypaper-engine`) una vez se
+confirme que el picker de noctalia funciona.
+
+### Theme fijo, no ligado al wallpaper
+
+El theme es Catppuccin Mocha fijo (`theme.source = "builtin"`,
+`theme.builtin = "Catppuccin"` en `settings.toml`) — cambiar de wallpaper
+**no** debe cambiar la paleta. Dos trampas del picker de wallpaper que sí la
+cambian, a evitar:
+
+- **`theme.source = "wallpaper"`** genera una paleta nueva del wallpaper cada
+  vez que cambia. No usar — mantener `source` en `builtin`.
+- **Favoritos (★)**: marcar como favorito un wallpaper mientras está aplicado
+  guarda junto a la ruta el `theme_mode`/paleta activos en ese momento
+  (`[[wallpaper.favorite]]` en `settings.toml`), y volver a seleccionar ese
+  favorito reaplica ese theme entero, no solo la imagen. Si se favorita algo,
+  revisar que la entrada en `settings.toml` no tenga `palette_source` /
+  `builtin_palette` / `community_palette` — solo `path` y `theme_mode = "dark"`.
+
+Para forzar el theme fijo por CLI sin tocar la GUI:
+
+```sh
+noctalia msg color-scheme-set builtin Catppuccin
+noctalia msg theme-mode-set dark
+noctalia msg templates-apply
+```
+
+---
+
+## Discos extraíbles (USB)
+
+**No hay automount.** Nada se monta solo al pinchar un USB — es deliberado, no
+falta un daemon. El dueño del montaje es **udisks2**, y se maneja desde yazi.
+
+### Desde yazi (la forma normal)
+
+Abre yazi (`SUPER + F`) y pulsa **`M`**. Se abre el panel del plugin
+`mount.yazi` con todas las particiones del sistema:
+
+| Tecla | Acción                         |
+|-------|--------------------------------|
+| `j` / `k` | Bajar / subir              |
+| `m`   | Montar la partición            |
+| `u`   | Desmontar                      |
+| `e`   | Expulsar el disco (apaga el puerto) |
+| `l`   | Entrar en el punto de montaje  |
+| `q`   | Salir del panel                |
+
+udisks2 monta en `/run/media/vgonz/<ETIQUETA>` (o el UUID si el disco no tiene
+etiqueta). Al ser sesión local activa, polkit lo autoriza sin pedir contraseña.
+
+**Desmonta siempre antes de tirar del USB** (`u` o `e`). FAT32 no tiene journal:
+sacarlo con escrituras en vuelo corrompe la tabla.
+
+### Desde la terminal
+
+```bash
+lsblk -o NAME,SIZE,FSTYPE,LABEL,MOUNTPOINT   # ver qué hay
+udisksctl mount   -b /dev/sda1               # montar
+udisksctl unmount -b /dev/sda1               # desmontar
+udisksctl power-off -b /dev/sda              # expulsar (el disco, no la partición)
+```
+
+### Identificar el dispositivo correcto
+
+**`/dev/sdX` no es estable y no tiene relación con el puerto físico.** El kernel
+reparte `sda`, `sdb`… por orden de sondeo. El mismo pendrive en el mismo puerto
+sale `sda` un día y `sdb` otro si algo llegó antes. Nunca escribas ni formatees
+apuntando a `/dev/sdX` sin comprobar antes qué es:
+
+```bash
+lsblk -o NAME,SIZE,FSTYPE,LABEL,UUID,MOUNTPOINT   # qué hay y cómo se llama
+ls -l /dev/disk/by-label/                         # por etiqueta  ← usa esto
+ls -l /dev/disk/by-uuid/                          # por volume serial
+ls -l /dev/disk/by-id/                            # por serial USB del fabricante
+ls -l /dev/disk/by-path/                          # por puerto físico
+```
+
+`by-path` es el único atado al puerto (`pci-…-usb-0:1:…`): identifica *dónde*
+está pinchado, no *qué* está pinchado. Útil para "el disco del puerto de atrás",
+inútil para "mi pendrive de backups".
+
+**Los pendrives baratos mienten o duplican el serial.** Los de VID genérico
+(strings tipo `USB` / `Disk 2.0`) suelen traer el mismo serial en todo un lote,
+o ninguno. Si dos comparten serial, udev genera el **mismo** nombre en `by-id`
+y el symlink acaba apuntando solo a uno. El volume serial de FAT32 tampoco
+salva: son 32 bits derivados de fecha+hora de formateo, y un lote formateado en
+fábrica de una tirada puede repetirlo.
+
+Conclusión: **para varios pendrives iguales, la etiqueta es el único
+identificador fiable, porque la pones tú.** Ponle a cada uno una distinta y
+márcalos físicamente igual.
+
+### Formatos y encoding
+
+FAT32 y exFAT guardan los nombres largos en UTF-16 por especificación. **La
+opción de montaje que decide si eso viaja bien es `utf8`, no `iocharset`**, y
+udisks2 la pone siempre. Con el locale `en_US.UTF-8` de esta máquina los
+acentos, las ñ y hasta el japonés hacen round-trip byte a byte — verificado
+sobre este pendrive.
+
+`iocharset` solo gobierna los nombres cortos 8.3 cuando `utf8` está activo, así
+que ver `iocharset=ascii` en la lista de `findmnt` no es un problema: es el
+valor por defecto del kernel, inerte. Aparece igual en el montaje del USB y en
+el de `/boot`, y ninguno de los dos destroza nada. El mojibake haría falta un
+montaje **sin** `utf8` y con un `iocharset` no-UTF-8 — no es el caso aquí ni hay
+que tocar nada para evitarlo.
+
+`exfat` no tiene ni opción `iocharset` — su driver habla UTF-8 siempre.
+
+Al formatear uno nuevo:
+
+| Filesystem | Cuándo                                                       |
+|------------|--------------------------------------------------------------|
+| **FAT32**  | Solo si todos los ficheros son < 4 GiB. Lo lee absolutamente todo (hardware viejo, firmware UEFI). |
+| **exFAT**  | **Por defecto para cualquier cosa con vídeo o ISOs.** Sin límite práctico de tamaño. Win Vista SP1+, macOS 10.6.5+, Linux 5.4+, Android 13+. |
+| **ext4**   | Solo para uso exclusivo en este PC. Ilegible fuera de Linux. |
+
+> **El límite de 4 GiB de FAT32 falla en silencio.** Al copiar un fichero mayor,
+> el gestor de ficheros (yazi incluido) puede terminar sin error visible y dejar
+> el destino **truncado a exactamente 4 294 967 295 bytes** (`2^32 - 1`). Un
+> `.mkv` cortado así se abre y se reproduce con normalidad — simplemente se
+> acaba antes de tiempo — así que la inspección visual no lo detecta. Si ves ese
+> número exacto como tamaño de fichero, es esto.
+
+### Validar una copia
+
+Nunca te fíes de "se ve todo". Compara nombres y tamaños, y el contenido de lo
+grande:
+
+```bash
+# 1. estructura y tamaños
+cd ~/origen && find . -type f -printf '%P\t%s\n' | sort > /tmp/src.txt
+cd /run/media/vgonz/ETIQUETA && find . -type f -printf '%P\t%s\n' | sort > /tmp/dst.txt
+diff /tmp/src.txt /tmp/dst.txt        # vacío = mismos ficheros, mismos bytes
+
+# 2. contenido byte a byte (lento en USB 2.0: ~30 MB/s de techo)
+cmp origen/fichero /run/media/vgonz/ETIQUETA/fichero && echo IDÉNTICO
+```
+
+Para copiar, mejor `rsync -a --info=progress2 ~/origen/ /run/media/vgonz/ETIQUETA/destino/`:
+da código de salida fiable y es reanudable, a diferencia del copiar/pegar de la TUI.
+
+```bash
+sudo mkfs.vfat -F 32 -n ETIQUETA /dev/sdX1   # FAT32 (etiqueta: 11 chars, mayúsculas)
+sudo mkfs.exfat -n etiqueta /dev/sdX1        # exFAT
+sudo fatlabel /dev/sdX1 ETIQUETA             # renombrar FAT32 sin formatear (desmontado)
+fatlabel /dev/sdX1                           # leer la etiqueta actual
+```
+
+`fatlabel` escribe 11 bytes en dos sitios (el BPB del boot sector y una entrada
+de volumen en el directorio raíz) y no toca ni los datos ni el volume serial.
+La etiqueta se codifica en **codepage 850**, no en UTF-8: nada de acentos ni ñ
+ahí, aunque en los nombres de fichero vayan perfectos. `by-label` no refleja el
+cambio hasta que repinchas o corres `sudo udevadm trigger`.
 
 ---
 
@@ -308,8 +546,10 @@ pero aquí el dueño es waypaper-engine: usar los dos a la vez se pisa.
 | `SUPER + T`         | Terminal (kitty)                |
 | `SUPER + F`         | File manager (yazi en kitty — default system-wide) |
 | `SUPER + B`         | Browser (brave)                 |
-| `SUPER + C`         | Clipboard history (noctalia)    |
+| `SUPER + V`         | Clipboard history (noctalia)    |
 | `SUPER + D`         | Control center (noctalia)       |
+| `SUPER + C`         | Configuración (noctalia settings) |
+| `SUPER + ESC`       | Menú de energía (lock/suspend/logout/reboot/shutdown) |
 | `SUPER + M`         | Salir de Hyprland               |
 
 Yazi está registrado como default de `inode/directory` vía `~/.config/mimeapps.list`,
@@ -384,7 +624,6 @@ Lanzados desde el handler `hl.on("hyprland.start", ...)` de `conf.d/autostart.lu
 | Proceso                      | Función                              |
 |------------------------------|--------------------------------------|
 | `noctalia`                   | Shell completo — ver [Noctalia](#noctalia-shell) |
-| `waypaper-daemon`            | Wallpaper                            |
 | `wl-paste ... cliphist`      | Captura clipboard a histórico (x2: texto e imagen) |
 
 Ese evento solo se dispara al **inicio de sesión**, no en `hyprctl reload`.

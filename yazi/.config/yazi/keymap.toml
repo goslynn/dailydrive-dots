@@ -1,0 +1,6 @@
+# Gestor de discos extraíbles (plugins/mount.yazi).
+# Dentro del panel: m monta · u desmonta · e expulsa · l entra · q sale.
+[[mgr.prepend_keymap]]
+on = "M"
+run = "plugin mount"
+desc = "Montar / desmontar discos extraíbles"

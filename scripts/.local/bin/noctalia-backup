@@ -1,0 +1,30 @@
+#!/bin/sh
+# Vuelca la config viva de noctalia a este repo (sentido único: sistema -> repo).
+#
+# Por qué no es un paquete stow normal: noctalia v5 tiene dos capas de config,
+# los TOML de ~/.config/noctalia (escritos a mano) y los overrides que la GUI
+# guarda en ~/.local/state/noctalia/settings.toml. La GUI nunca toca la primera
+# capa, así que un symlink de stow en ~/.config/noctalia no se sobrescribiría:
+# se quedaría tapado por el state y desactualizado en silencio. El export
+# fusiona ambas capas en un solo TOML, que es lo que la doc recomienda para
+# dotfiles: https://docs.noctalia.dev/v5/configuration/#exporting-config
+set -e
+
+# El script se ejecuta desde ~/.local/bin (symlink de stow); resolvemos el
+# destino real para no depender del cwd ni hardcodear la ruta del repo.
+SELF=$(readlink -f "$0")                       # ~/.dotfiles/scripts/.local/bin/noctalia-backup
+REPO=$(dirname "$(dirname "$(dirname "$(dirname "$SELF")")")")
+DEST="$REPO/noctalia/.config/noctalia/config.toml"
+
+command -v noctalia >/dev/null 2>&1 || { echo "noctalia no está instalado" >&2; exit 1; }
+
+# El export aborta sin escribir nada si algún TOML no parsea, así que primero
+# lo dejamos en un temporal y solo pisamos el fichero del repo si salió bien.
+TMP=$(mktemp)
+trap 'rm -f "$TMP"' EXIT
+noctalia config export > "$TMP"
+mkdir -p "$(dirname "$DEST")"
+cp "$TMP" "$DEST"
+
+echo "-> $DEST"
+git -C "$REPO" --no-pager diff --stat -- "$DEST" || true

@@ -14,9 +14,9 @@ hl.on("hyprland.start", function()
     -- screenshots, lockscreen. Config lives in ~/.config/noctalia, not here.
     hl.exec_cmd("noctalia")
 
-    -- Wallpaper: waypaper-engine daemon (re-applies the last wallpaper from its
-    -- gallery DB at ~/.config/waypaper-engine/). GUI picker: `waypaper-engine`.
-    hl.exec_cmd("waypaper-daemon")
+    -- Wallpaper: owned by noctalia (images via its built-in wallpaper picker,
+    -- video via the mpvpaper plugin). Gallery at ~/Pictures/Wallpapers. No
+    -- separate daemon needed.
 
     -- Clipboard history store, read by noctalia's clipboard panel (SUPER+C).
     hl.exec_cmd("wl-paste --type text  --watch cliphist store")
