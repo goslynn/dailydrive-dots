@@ -106,14 +106,14 @@ su - vgonz
 ## 4. Aplicar esta configuración
 
 ```bash
-nix-shell -p git --run 'git clone -b nixos https://github.com/goslynn/archbtw-hyprm-dotfiles.git ~/.dotfiles'
+nix-shell -p git --run 'git clone -b nixos https://github.com/goslynn/dailydrive-dots.git ~/.dotfiles'
 ~/.dotfiles/install.sh
 ```
 
 O de una sola vez:
 
 ```bash
-nix-shell -p curl --run 'curl -fsSL https://raw.githubusercontent.com/goslynn/archbtw-hyprm-dotfiles/nixos/install.sh' | bash
+nix-shell -p curl --run 'curl -fsSL https://raw.githubusercontent.com/goslynn/dailydrive-dots/nixos/install.sh' | bash
 ```
 
 El script es **re-ejecutable**: si algo falla a mitad, arréglalo y vuelve a

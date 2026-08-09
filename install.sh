@@ -5,14 +5,14 @@
 # rest is pulled by Nix. Safe to re-run: every step is idempotent.
 #
 # Run it either way:
-#   curl -fsSL https://raw.githubusercontent.com/goslynn/archbtw-hyprm-dotfiles/nixos/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/goslynn/dailydrive-dots/nixos/install.sh | bash
 #   git clone -b nixos <repo> ~/.dotfiles && ~/.dotfiles/install.sh
 #
 # Full walkthrough, including partitioning and the minimal install that comes
 # before this: INSTALL.md
 set -euo pipefail
 
-REPO_URL="${REPO_URL:-https://github.com/goslynn/archbtw-hyprm-dotfiles.git}"
+REPO_URL="${REPO_URL:-https://github.com/goslynn/dailydrive-dots.git}"
 REPO_BRANCH="${REPO_BRANCH:-nixos}"
 DOTFILES="${DOTFILES:-$HOME/.dotfiles}"
 HOST="${HOST:-laptop}"
