@@ -1,19 +1,15 @@
 -- Look & feel — general/decoration/animations
-
--- dofile, not require: the palette lives outside the hypr tree and its filename
--- (hyprland.lua) would collide with the entry point as a module name. It's pure
--- data, so loading it directly is simpler than another package.path entry.
-local c = dofile(os.getenv("HOME") .. "/.config/themes/catppuccin/mocha/hyprland.lua")
+--
+-- Border colors are not set here: noctalia's generated
+-- ~/.config/hypr/noctalia.lua sets general.col.active_border/inactive_border
+-- via apply_theme(), called last from the entry point, so anything set here
+-- would just be overwritten.
 
 hl.config({
     general = {
         gaps_in  = 4,
         gaps_out = 8,
         border_size = 2,
-        col = {
-            active_border   = { colors = { c.blue, c.mauve }, angle = 45 },
-            inactive_border = c.surface0,
-        },
         resize_on_border = true,
         allow_tearing = false,
         layout = "dwindle",

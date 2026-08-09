@@ -95,7 +95,7 @@ cd ~/.dotfiles && stow -t "$HOME" foo
 | `easyeffects` | Procesador de audio                                |
 | `sioyek`      | Lector de PDF                                      |
 | `brave`       | Flags de arranque (Wayland/ozone)                  |
-| `gtk-3.0` `gtk-4.0` `qt5ct` `qt6ct` `xdg-misc` | Theming/MIME de toolkits |
+| `xdg-misc`    | Ficheros sueltos de `~/.config` (MIME, Qt)         |
 | `noctalia`    | **No se stowea** — copia de la config del shell, ver [Noctalia](#noctalia-shell) |
 
 > La config del shell (barra, notificaciones, launcher…) la escribe noctalia
@@ -168,14 +168,14 @@ en vez de `~/`. La config está **modularizada**: `.zshrc` carga los módulos co
 .zshrc           # history, opts, completion, zoxide; orquesta los source de abajo
 fzf.zsh          # FZF_DEFAULT_* + picker Ctrl+F sin ocultos
 aliases.zsh      # eza/bat/rg, git, lf, stream
-bindings.zsh     # cursores y keybinds de zsh-vi-mode (vía zvm_after_init)
+bindings.zsh     # keybinds custom (palabra adelante/atrás, historial, etc.)
 plugins.zsh      # gestor mínimo: clona y carga los plugins
 prompt.zsh       # starship
 plugins/         # clones git auto-instalados — NO versionados (.gitignore)
 ```
 
 **Plugins:** `plugins.zsh` clona en `$ZDOTDIR/plugins/` la primera vez que
-arrancas un shell (autosuggestions, history-substring-search, vi-mode,
+arrancas un shell (autosuggestions, history-substring-search,
 fast-syntax-highlighting). Por eso `plugins/` está en `.gitignore`. Actualizar:
 `zplugin-update`.
 
