@@ -64,11 +64,10 @@ zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'  # lowercase input matche
 # Fuzzy finder
 # =========================================================
 
-# Arch
-if [[ -f /usr/share/fzf/key-bindings.zsh ]]; then
-  source /usr/share/fzf/key-bindings.zsh
-  source /usr/share/fzf/completion.zsh
-fi
+# Keybindings + completion straight from the binary, so this doesn't depend on
+# where the distro drops the shell snippets (/usr/share/fzf on Arch,
+# $out/share/fzf in the Nix store). Needs fzf >= 0.48.
+command -v fzf >/dev/null && source <(fzf --zsh)
 
 
 # =========================================================
@@ -93,33 +92,24 @@ source "$ZDOTDIR/prompt.zsh"
 # =========================================================
 # jbang
 # =========================================================
+# The binary comes from the package manager, so no PATH juggling here.
 alias j!=jbang
-export PATH="$HOME/.jbang/bin:$PATH"
-
-# =========================================================
-# SDKMAN
-# =========================================================
-export SDKMAN_DIR="$HOME/.sdkman"
-[[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
-export PATH="$HOME/.local/bin:$PATH"
-
 
 # =========================================================
 # FNM
 # =========================================================
-FNM_PATH="/home/vgonz/.local/share/fnm"
-if [ -d "$FNM_PATH" ]; then
-  export PATH="$FNM_PATH:$PATH"
-  eval "$(fnm env --shell zsh)"
-fi
+# No FNM_PATH: fnm itself is on PATH from the package manager, and `fnm env`
+# exports the install dir for the Node versions it manages.
+command -v fnm >/dev/null && eval "$(fnm env --shell zsh)"
 
 # =========================================================
 # kitty shell integration (manual)
 # =========================================================
-# /etc/zsh/zshenv overwrites ZDOTDIR, clobbering the value kitty injects for its
-# automatic integration, so we load it by hand (kitty.conf sets `shell_integration
-# no-rc`). Without this kitty can't detect the shell is idle at the prompt and
-# asks "It is running: /usr/bin/zsh" when closing an idle window.
+# The system zshenv (/etc/zsh/zshenv on Arch, /etc/zshenv on NixOS) overwrites
+# ZDOTDIR, clobbering the value kitty injects for its automatic integration, so
+# we load it by hand (kitty.conf sets `shell_integration no-rc`). Without this
+# kitty can't detect the shell is idle at the prompt and asks "It is running:
+# /usr/bin/zsh" when closing an idle window.
 if [[ -n "$KITTY_INSTALLATION_DIR" ]]; then
   export KITTY_SHELL_INTEGRATION="enabled"
   autoload -Uz -- "$KITTY_INSTALLATION_DIR"/shell-integration/zsh/kitty-integration
@@ -128,7 +118,7 @@ if [[ -n "$KITTY_INSTALLATION_DIR" ]]; then
 fi
 
 # pnpm
-export PNPM_HOME="/home/vgonz/.local/share/pnpm"
+export PNPM_HOME="$XDG_DATA_HOME/pnpm"
 case ":$PATH:" in
   *":$PNPM_HOME/bin:"*) ;;
   *) export PATH="$PNPM_HOME/bin:$PATH" ;;

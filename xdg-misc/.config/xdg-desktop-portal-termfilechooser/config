@@ -1,0 +1,18 @@
+# Portal file chooser — opens kitty+yazi instead of a GTK dialog.
+# Man page: xdg-desktop-portal-termfilechooser(5)
+#
+# cmd must be resolvable by the portal, which runs with a minimal environment
+# and does NOT search $PATH the way a shell would. Upstream installs the
+# wrappers via `install_subdir('contrib', ...)`, so on NixOS they land at
+# $out/share/xdg-desktop-portal-termfilechooser/ and are reachable through the
+# system profile once the package is in environment.systemPackages.
+#
+# (On Arch this used to say just `yazi-wrapper.sh`, which never resolved: that
+# distro's package drops contrib/ entirely, so the picker silently fell back to
+# nothing. Hence the absolute path.)
+[filechooser]
+cmd=/run/current-system/sw/share/xdg-desktop-portal-termfilechooser/yazi-wrapper.sh
+default_dir=$HOME
+env=TERMCMD=kitty --class termfilechooser
+open_mode=suggested
+save_mode=suggested

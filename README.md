@@ -1,13 +1,20 @@
 # dotfiles
 
-Setup minimalista de Hyprland (Wayland) en Arch. Toda la configuración vive
-aquí y se aplica al `$HOME` con [GNU stow](https://www.gnu.org/software/stow/).
+Setup minimalista de Hyprland (Wayland) en **NixOS**. Toda la configuración vive
+aquí: los dotfiles y, en `nix/`, la declaración del sistema.
+
+> **Rama `nixos`.** La rama `master` es la versión Arch + GNU stow. Los ficheros
+> de config son los mismos; lo que cambia es cómo se despliegan y de dónde salen
+> los paquetes.
+>
+> **¿Instalación desde cero?** → **[INSTALL.md](INSTALL.md)**. Esta guía asume
+> un sistema ya montado y explica cómo tocar cada cosa.
 
 ---
 
 ## Índice
 
-- [Flujo stow](#flujo-stow)
+- [Despliegue](#despliegue)
 - [Paquetes incluidos](#paquetes-incluidos)
 - [Cómo modificar cada herramienta](#cómo-modificar-cada-herramienta)
 - [Noctalia (shell)](#noctalia-shell)
@@ -22,10 +29,10 @@ aquí y se aplica al `$HOME` con [GNU stow](https://www.gnu.org/software/stow/).
 
 ---
 
-## Flujo stow
+## Despliegue
 
-Cada subdirectorio de `~/.dotfiles/` es un **paquete stow** con la estructura
-que reproduce su destino en `$HOME`:
+Cada subdirectorio de `~/.dotfiles/` reproduce la estructura de su destino en
+`$HOME`, herencia del layout de stow que se mantiene tal cual:
 
 ```
 ~/.dotfiles/
@@ -41,39 +48,36 @@ que reproduce su destino en `$HOME`:
 └── ...
 ```
 
-Al correr `stow -t ~ hypr`, stow crea el symlink `~/.config/hypr →
-~/.dotfiles/hypr/.config/hypr`. Editar los archivos en `~/.dotfiles/` o en
-`~/.config/` es equivalente: son el mismo archivo.
+Quien crea los symlinks es **home-manager**, declarado en
+[`nix/home/dotfiles.nix`](nix/home/dotfiles.nix). Enlaza con
+`mkOutOfStoreSymlink`, así que `~/.config/hypr/conf.d` apunta a
+`~/.dotfiles/hypr/.config/hypr/conf.d` — a un fichero real y **escribible**, no
+a un symlink de solo lectura de `/nix/store`.
 
-**Aplicar todos los paquetes:**
+Eso es deliberado: noctalia reescribe en runtime `kitty/themes/noctalia.conf`,
+`btop/themes/noctalia.theme`, `yazi/flavors/noctalia.yazi/` y la región
+`[palettes.noctalia]` dentro de `starship.toml`, y btop reescribe su propio
+`btop.conf` al salir. Contra el store todas esas escrituras fallarían.
 
-```bash
-cd ~/.dotfiles
-for p in */; do
-    [ "${p%/}" = "noctalia" ] && continue   # backup, no se stowea (ver abajo)
-    stow -t "$HOME" "${p%/}"
-done
-```
+**Consecuencias prácticas:**
 
-**Re-aplicar un paquete (tras añadir archivos):**
+- Editar en `~/.dotfiles/` o en `~/.config/` es equivalente: es el mismo
+  fichero. Cambiar un config **no requiere rebuild** (para Hyprland,
+  `hyprctl reload`).
+- Los temas que genera noctalia caen dentro del repo y aparecen en
+  `git status`. Es lo esperado, no es basura que revertir.
+- **`~/.dotfiles` es una dependencia del entorno.** Si mueves o borras el repo,
+  los configs quedan colgando.
 
-```bash
-cd ~/.dotfiles && stow -R -t "$HOME" hypr
-```
-
-**Desaplicar:**
-
-```bash
-cd ~/.dotfiles && stow -D -t "$HOME" hypr
-```
-
-**Añadir una nueva herramienta** (ejemplo `foo`):
+**Añadir una herramienta nueva** (ejemplo `foo`):
 
 ```bash
 mkdir -p ~/.dotfiles/foo/.config/foo
 mv ~/.config/foo/* ~/.dotfiles/foo/.config/foo/
 rmdir ~/.config/foo
-cd ~/.dotfiles && stow -t "$HOME" foo
+# y declarar el enlace en nix/home/dotfiles.nix:
+#   "foo".source = link "foo/.config/foo";
+sudo nixos-rebuild switch --flake ~/.dotfiles#laptop
 ```
 
 ---
@@ -83,24 +87,26 @@ cd ~/.dotfiles && stow -t "$HOME" foo
 | Paquete       | Qué contiene                                       |
 |---------------|----------------------------------------------------|
 | `hypr`        | Hyprland — `hyprland.lua` + `conf.d/` (config en Lua) |
-| `scripts`     | `~/.local/bin/`: `sioyek` (escalado XWayland), `noctalia-backup` |
-| `themes`      | Paleta Catppuccin Mocha (fuente única)             |
+| `scripts`     | `~/.local/bin/`: `noctalia-backup`                 |
 | `kitty`       | Terminal                                           |
-| `nvim`        | Editor                                             |
-| `git`         | Git config                                         |
+| `git`         | Git config (solo `ignore`; la identidad no se versiona) |
 | `starship`    | Prompt                                             |
 | `zsh`         | Shell: `.zshrc`, `.zshenv` y módulos (ZDOTDIR en `~/.config/zsh`) |
 | `yazi`        | File manager TUI + plugin `mount` (discos extraíbles) |
 | `btop` `mpv`  | Monitor de sistema, reproductor                    |
-| `easyeffects` | Procesador de audio                                |
 | `sioyek`      | Lector de PDF                                      |
 | `brave`       | Flags de arranque (Wayland/ozone)                  |
-| `xdg-misc`    | Ficheros sueltos de `~/.config` (MIME, Qt)         |
-| `noctalia`    | **No se stowea** — copia de la config del shell, ver [Noctalia](#noctalia-shell) |
+| `xdg-misc`    | Ficheros sueltos de `~/.config`: MIME y portales   |
+| `noctalia`    | **No se enlaza** — copia de la config del shell, ver [Noctalia](#noctalia-shell) |
+| `nix/`        | Declaración del sistema (no se enlaza a `$HOME`)   |
 
 > La config del shell (barra, notificaciones, launcher…) la escribe noctalia
-> fuera de stow; aquí solo hay un volcado que genera `noctalia-backup`.
+> fuera de este flujo; aquí solo hay un volcado que genera `noctalia-backup`.
 > Ver [Noctalia](#noctalia-shell).
+
+**El escalado HiDPI de Sioyek** ya no es un script en `scripts/`: es un wrapper
+declarado en [`nix/pkgs/sioyek-hidpi.nix`](nix/pkgs/sioyek-hidpi.nix), que fija
+`QT_AUTO_SCREEN_SCALE_FACTOR` y `QT_ENABLE_HIGHDPI_SCALING` en el binario.
 
 ---
 
@@ -150,12 +156,14 @@ Aplicar cambios sin reiniciar: `hyprctl reload`. Ver errores:
 > `HYPRLAND_INSTANCE_SIGNATURE=<sig> hyprctl configerrors`.
 
 **Autocompletado / LSP:** Hyprland instala stubs de la API en
-`/usr/share/hypr/stubs/hl.meta.lua`. Para que lua-ls los cargue, un
-`.luarc.json` con `{"workspace":{"library":["/usr/share/hypr/stubs"]}}`.
+`/run/current-system/sw/share/hypr/stubs/hl.meta.lua` (el módulo
+`programs.hyprland` añade `/share/hypr` a `environment.pathsToLink` justo para
+esto). Para que lua-ls los cargue, un `.luarc.json` con
+`{"workspace":{"library":["/run/current-system/sw/share/hypr/stubs"]}}`.
 
-### Kitty / Nvim / btop / mpv
+### Kitty / btop / mpv / sioyek
 
-Configuraciones tuyas pre-existentes; ya están bajo stow sin modificar.
+Configuraciones tuyas pre-existentes; se despliegan sin modificar.
 
 ### Zsh — `~/.config/zsh/`
 
@@ -181,23 +189,34 @@ fast-syntax-highlighting). Por eso `plugins/` está en `.gitignore`. Actualizar:
 
 **Aplicar cambios:** abre una shell nueva, o `exec zsh` / `source ~/.config/zsh/.zshrc`.
 
-> **⚠️ Bootstrap del sistema — paso manual fuera de stow.**
-> Para que zsh use `ZDOTDIR`, hay un archivo **fuera de `$HOME`** que stow no
-> puede gestionar: `/etc/zsh/zshenv`. La copia de referencia vive en
-> `zsh/etc/zsh/zshenv` (no se despliega — está en `.stow-local-ignore`).
-> Al reinstalar en una máquina nueva hay que copiarlo a mano con root:
+> **`ZDOTDIR` se fija fuera de `$HOME`.** Para que zsh lea su config desde
+> `~/.config/zsh` hace falta un fichero de sistema. En Arch era un
+> `sudo install` manual de `zsh/etc/zsh/zshenv` a `/etc/zsh/zshenv`; aquí lo
+> declara `programs.zsh.shellInit` en
+> [`nix/system/desktop.nix`](nix/system/desktop.nix), que escribe `/etc/zshenv`.
+> Ya no hay ningún paso manual — y `zsh/etc/zsh/zshenv` queda como copia de
+> referencia de la rama `master`.
 >
-> ```bash
-> sudo install -Dm644 ~/.dotfiles/zsh/etc/zsh/zshenv /etc/zsh/zshenv
-> ```
+> Ojo al orden: zsh lee `/etc/zshenv` → `$ZDOTDIR/.zshenv` → `/etc/zshrc` →
+> `$ZDOTDIR/.zshrc`. `enableGlobalCompInit = false` evita que el `/etc/zshrc`
+> de NixOS lance su propio `compinit`, porque de eso ya se encarga nuestro
+> `.zshrc` con un dump propio bajo `$XDG_CACHE_HOME`.
 
 ---
 
 ## Noctalia (shell)
 
 Barra, notificaciones, launcher, clipboard, control center, OSDs, lockscreen,
-screenshots y agente polkit corren en **noctalia** (`noctalia-git` 5.x, AUR).
+screenshots y agente polkit corren en **noctalia** (`pkgs.noctalia`, 5.x).
 Es un binario nativo — **no** usa quickshell.
+
+La pantalla de login es **noctalia-greeter** sobre greetd, declarada en
+[`nix/system/greeter.nix`](nix/system/greeter.nix). Sustituye a SDDM. Su paleta
+y su fondo **no** se declaran en Nix a propósito: las claves de
+`/var/lib/noctalia-greeter/greeter.toml` ganan sobre lo que sincroniza el shell,
+así que declararlas congelaría el aspecto del greeter. Se empujan a mano desde
+noctalia con *Settings → Security → Noctalia Greeter → Sync Now*, y hay que
+repetirlo al cambiar de fondo o paleta.
 
 ### Su config: copia de seguridad, no fuente de verdad
 
@@ -208,15 +227,18 @@ noctalia v5 apila dos capas de config, y **la GUI solo escribe en la segunda**:
 | `~/.config/noctalia/*.toml`             | tú, a mano (opcional; hoy no hay ninguno) |
 | `~/.local/state/noctalia/settings.toml` | la GUI / `noctalia msg` — aquí está todo |
 
-Por eso **noctalia no es un paquete stow**: un symlink en `~/.config/noctalia`
-no se sobrescribiría al tocar ajustes —ese es el miedo habitual— sino algo
-peor, se quedaría *tapado* por el state y desactualizado en silencio.
+Por eso **noctalia es el único paquete que no se enlaza**: un symlink en
+`~/.config/noctalia` no se sobrescribiría al tocar ajustes —ese es el miedo
+habitual— sino algo peor, se quedaría *tapado* por el state y desactualizado en
+silencio.
 
 En su lugar, `noctalia-backup` vuelca la config **efectiva** (las dos capas
 fusionadas, vía [`noctalia config export`](https://docs.noctalia.dev/v5/configuration/#exporting-config))
 a `noctalia/.config/noctalia/config.toml`. Sentido único: sistema → repo. El
-árbol imita `$HOME` como cualquier paquete, pero **no se stowea**; editar esa
-copia a mano no cambia nada hasta que la restaures.
+árbol imita `$HOME` como cualquier paquete, pero **no se despliega**; editar esa
+copia a mano no cambia nada hasta que la restaures. En una instalación limpia,
+`install.sh` hace esa restauración (copia el `config.toml` y borra el
+`settings.toml` del state, que si no lo taparía).
 
 ```bash
 noctalia msg settings-open      # tocas lo que sea en la GUI
@@ -308,46 +330,44 @@ deje todas las salidas apagadas.
 
 ## Theming (Catppuccin Mocha)
 
-Todos los colores viven en `~/.config/themes/catppuccin/mocha/`:
+**El tema lo posee noctalia por completo.** No hay paleta mantenida a mano en
+este repo, y no se debe reintroducir: el viejo paquete `themes/catppuccin/mocha/`
+se eliminó porque los ficheros generados por noctalia se cargaban *después* y
+pisaban cada color que ponía, así que era peso muerto, no fuente de verdad.
+Tampoco hay motor de templates externo — matugen y compañía están descartados a
+propósito.
 
-| Archivo          | Lo consume                                          |
-|------------------|------------------------------------------------------|
-| `tokens.conf`    | Referencia humana — paleta canónica (no la lee nadie)|
-| `hyprland.lua`   | `conf.d/style.lua` vía `dofile()`                    |
-| `kitty.conf`     | `~/.config/kitty/kitty.conf` vía `include`           |
+noctalia pasa su paleta por sus propias plantillas y **genera**, según
+`[theme.templates]` en su config:
 
-`hyprland.lua` es un módulo Lua que **devuelve una tabla** de colores
-(`{ blue = "rgb(89b4fa)", ... }`). `style.lua` lo carga con `dofile()` —y no
-con `require`— porque vive fuera del árbol de `hypr/` y su nombre chocaría con
-el entry point como nombre de módulo.
+| Genera                                  | ¿Cae en el repo? |
+|-----------------------------------------|------------------|
+| `kitty/themes/noctalia.conf`            | Sí               |
+| `btop/themes/noctalia.theme`            | Sí               |
+| `yazi/flavors/noctalia.yazi/`           | Sí               |
+| `starship.toml` → `[palettes.noctalia]` | Sí (reescribe una región del fichero) |
+| `~/.config/hypr/noctalia.lua`           | **No** — ver aviso |
 
-Los colores de noctalia ya no se mapean a mano (el viejo `colors.json` está
-muerto): usa su paleta *builtin* Catppuccin y desde ahí **genera** ficheros de
-tema, según `[theme.templates]` en su config:
+Todos caen dentro del repo porque `nix/home/dotfiles.nix` enlaza con
+`mkOutOfStoreSymlink` y los destinos son escribibles. Al cambiar de tema
+aparecen cambios en `git status` sin que tú hayas tocado nada: es lo esperado.
 
-| Genera                              | ¿Cae en el repo? |
-|-------------------------------------|------------------|
-| `kitty/themes/noctalia.conf`        | Sí (dir stoweado) |
-| `btop/themes/noctalia.theme`        | Sí (dir stoweado) |
-| `starship.toml` → `[palettes.noctalia]` | Sí (fichero stoweado) |
-| `~/.config/hypr/noctalia.lua`       | **No** — ver aviso |
+`conf.d/style.lua` no fija colores de borde a propósito — los pone
+`noctalia.lua` vía `apply_theme()`, que el entry point llama al final para que
+gane sobre cualquier cosa que ponga `conf.d/`.
 
-Es decir: al cambiar de tema aparecen cambios en `git status` sin que tú hayas
-tocado nada. Es esperado.
+> [!NOTE]
+> `~/.config/hypr/noctalia.lua` lo genera noctalia y **no está en este repo**.
+> En una máquina limpia no existe hasta que noctalia arranca una vez, así que
+> `hyprland.lua` lo carga con `pcall`: si falta, los bordes se quedan con los
+> colores por defecto de Hyprland en lugar de abortar la config entera y dejar
+> la sesión sin keybinds.
 
-> [!WARNING]
-> `hyprland.lua` hace `require("noctalia").apply_theme()`, pero
-> `~/.config/hypr/noctalia.lua` lo genera noctalia y **no está en este repo**
-> (stow desplegó `hypr/` por-fichero, así que el generado se quedó fuera). En
-> una máquina limpia hay que arrancar noctalia una vez para que exista.
+**Para añadir theming a una herramienta nueva:** deja que lo genere noctalia si
+soporta plantillas para ella. No vuelvas a introducir un fichero de paleta
+mapeado a mano.
 
-La paleta de `~/.config/themes/` sigue siendo la fuente para Hyprland. No hay
-motor de templates externo (matugen y compañía están descartados a propósito).
-
-**Para cambiar de theme:** reemplaza el contenido de estos archivos manteniendo
-nombres y formatos. Después: `hyprctl reload`.
-
-No hay multi-theming ni cambio en vivo — el switch es manual y único.
+No hay multi-theming ni cambio en vivo.
 
 ---
 
@@ -373,11 +393,10 @@ noctalia msg wallpaper-next|previous|random [connector]
 noctalia msg panel-toggle noctalia/mpvpaper:picker   # picker de vídeo
 ```
 
-Sustituye a **waypaper-engine** (AUR): tenía su propia galería/DB en
-`~/.config/waypaper-engine/` y un daemon de arranque (`waypaper-daemon`),
-ya quitado de `autostart.lua`. Su galería se migró a `~/Pictures/Wallpapers/`;
-el paquete se puede desinstalar (`pacman -Rns waypaper-engine`) una vez se
-confirme que el picker de noctalia funciona.
+Sustituyó a **waypaper-engine**, que tenía su propia galería/DB y un daemon de
+arranque. La galería vive ahora en `~/Pictures/Wallpapers/` — contenido tuyo,
+no versionado aquí, así que en una instalación limpia hay que restaurarla
+desde tus copias de seguridad.
 
 ### Theme fijo, no ligado al wallpaper
 
@@ -550,7 +569,6 @@ cambio hasta que repinchas o corres `sudo udevadm trigger`.
 | `SUPER + D`         | Control center (noctalia)       |
 | `SUPER + C`         | Configuración (noctalia settings) |
 | `SUPER + ESC`       | Menú de energía (lock/suspend/logout/reboot/shutdown) |
-| `SUPER + M`         | Salir de Hyprland               |
 
 Yazi está registrado como default de `inode/directory` vía `~/.config/mimeapps.list`,
 así que `xdg-open <dir>` desde cualquier app también lo abre.
@@ -652,8 +670,11 @@ Ya no arrancan: `shikane` (monitores ahora en `monitors.lua`), `qs`
   las amplía como bitmap → borrosas. Lo resuelve
   `xwayland { force_zero_scaling = true }` en `conf.d/xwayland.lua` (renderiza a
   píxel nativo) + las variables `QT_*` que cada app necesita para reescalar su
-  UI. Sioyek las recibe vía el wrapper `~/.local/bin/sioyek` (paquete stow
-  `scripts`). Si añades otra app XWayland que salga diminuta, dale
-  `QT_AUTO_SCREEN_SCALE_FACTOR=1` / `GDK_SCALE` igual que el wrapper.
-- **Backup pre-rice**: `~/dotfiles-backup-20260527-230822.tar.gz` — restaurar con
-  `tar -xzf ... -C ~`.
+  UI. Sioyek las recibe del wrapper declarado en `nix/pkgs/sioyek-hidpi.nix`.
+  Si añades otra app XWayland que salga diminuta, envuélvela igual con
+  `QT_AUTO_SCREEN_SCALE_FACTOR=1` / `GDK_SCALE`.
+- **Un binario descargado a mano no arranca** (`No such file or directory` sobre
+  un ejecutable que existe): espera `/lib64/ld-linux-x86-64.so.2`, que no existe
+  en NixOS. Usa el paquete de nixpkgs o un devShell. `nix-ld` no está activado.
+- Más troubleshooting específico de NixOS (greeter, rollback, portales):
+  **[INSTALL.md](INSTALL.md#troubleshooting)**.
