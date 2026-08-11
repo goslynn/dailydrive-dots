@@ -17,6 +17,7 @@ hl.bind(mainMod .. " + V",      hl.dsp.exec_cmd("noctalia msg panel-toggle clipb
 hl.bind(mainMod .. " + D",      hl.dsp.exec_cmd("noctalia msg panel-toggle control-center"))
 hl.bind(mainMod .. " + C",      hl.dsp.exec_cmd("noctalia msg settings-toggle"))
 hl.bind(mainMod .. " + ESCAPE", hl.dsp.exec_cmd("noctalia msg panel-toggle session"))
+hl.bind(mainMod .. " + SHIFT + D", hl.dsp.exec_cmd("noctalia msg panel-toggle control-center calendar"))
 
 -- ── Window control ───────────────────────────────────
 hl.bind(mainMod .. " + Q", hl.dsp.window.close())
