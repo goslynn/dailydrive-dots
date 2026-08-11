@@ -43,3 +43,6 @@ if ok then
 else
     print("hyprland.lua: noctalia.lua not found yet, skipping theme")
 end
+
+-- For Noctalia Color templates
+require("noctalia").apply_theme()
