@@ -95,7 +95,7 @@ sudo nixos-rebuild switch --flake ~/.dotfiles#laptop
 | `yazi`        | File manager TUI + plugin `mount` (discos extraíbles) |
 | `btop` `mpv`  | Monitor de sistema, reproductor                    |
 | `sioyek`      | Lector de PDF                                      |
-| `brave`       | Flags de arranque (Wayland/ozone)                  |
+| `brave-origin`| Flags de arranque (Wayland/ozone)                  |
 | `xdg-misc`    | Ficheros sueltos de `~/.config`: MIME y portales   |
 | `noctalia`    | **No se enlaza** — copia de la config del shell, ver [Noctalia](#noctalia-shell) |
 | `nix/`        | Declaración del sistema (no se enlaza a `$HOME`)   |
@@ -564,7 +564,7 @@ cambio hasta que repinchas o corres `sudo udevadm trigger`.
 | `SUPER + SPACE`     | **App launcher** (noctalia)     |
 | `SUPER + T`         | Terminal (kitty)                |
 | `SUPER + F`         | File manager (yazi en kitty — default system-wide) |
-| `SUPER + B`         | Browser (brave)                 |
+| `SUPER + B`         | Browser (brave-origin)          |
 | `SUPER + V`         | Clipboard history (noctalia)    |
 | `SUPER + D`         | Control center (noctalia)       |
 | `SUPER + C`         | Configuración (noctalia settings) |

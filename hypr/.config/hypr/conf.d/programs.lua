@@ -10,6 +10,6 @@
 
 return {
     terminal     = "kitty",
-    browser      = "brave",
+    browser      = "brave-origin",
     file_manager = "kitty -e yazi",
 }

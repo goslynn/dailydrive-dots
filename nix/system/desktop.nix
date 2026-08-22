@@ -2,6 +2,21 @@
 # The login screen lives in ./greeter.nix.
 { pkgs, ... }:
 {
+  # ── GPU ──────────────────────────────────────────────
+  # hardware-configuration.nix leaves boot.initrd.kernelModules empty, so
+  # amdgpu only loads during the normal boot stage — several seconds after
+  # multi-user.target, once udev gets around to it. greetd.service has no
+  # dependency on the GPU being ready (only on getty@tty1/plymouth-quit-wait),
+  # so it starts noctalia-greeter-compositor first, which fails to open any
+  # DRM/KMS device, exits instantly, and does that 5x within ~3s — hitting
+  # systemd's start-limit-hit and staying dead for the rest of the boot,
+  # well before amdgpu's own "detected ip block" lines even show up in the
+  # kernel log. That is the boot hang this laptop hits: not a noctalia
+  # crash, but greetd racing ahead of a GPU driver that isn't loaded yet.
+  # Loading amdgpu from the initrd (early KMS) makes /dev/dri ready before
+  # userspace starts, closing the race.
+  boot.initrd.kernelModules = [ "amdgpu" ];
+
   # ── Compositor ───────────────────────────────────────
   # The Lua config itself is not managed here — it is symlinked out of
   # ~/.dotfiles by home-manager (see nix/home/dotfiles.nix), exactly as stow

@@ -25,6 +25,25 @@ let
   link = path: config.lib.file.mkOutOfStoreSymlink "${dots}/${path}";
 in
 {
+  # yazi's own .desktop entry (from the yazi package) declares Terminal=true
+  # and Exec=yazi %f, expecting the launcher to wrap it in a terminal. Under
+  # Hyprland there's no xdg-terminal-exec set up, and NixOS's xdg-open
+  # (xdg-utils) doesn't even read the Terminal= key at all — it just execs
+  # `yazi <path>` with no TTY attached, so "open containing folder" from
+  # Brave silently does nothing. hiPrio here overrides the package's
+  # yazi.desktop with one that embeds the terminal directly in Exec, the same
+  # way conf.d/programs.lua's file_manager = "kitty -e yazi" already does for
+  # the in-Hyprland keybind.
+  xdg.desktopEntries.yazi = {
+    name = "Yazi File Manager";
+    comment = "Blazing fast terminal file manager written in Rust, based on async I/O";
+    icon = "yazi";
+    exec = "kitty -e yazi %f";
+    terminal = false;
+    mimeType = [ "inode/directory" ];
+    categories = [ "System" "FileManager" "FileTools" "ConsoleOnly" ];
+  };
+
   xdg.configFile = {
     # hypr is deliberately NOT folded into a single directory symlink:
     # ~/.config/hypr has to be a real directory so noctalia can create
@@ -47,7 +66,8 @@ in
     # Single files.
     "starship.toml".source = link "starship/.config/starship.toml";
     "mimeapps.list".source = link "xdg-misc/.config/mimeapps.list";
-    "brave-flags.conf".source = link "brave/.config/brave-flags.conf";
+    "brave-origin-flags.conf".source =
+      link "brave-origin/.config/brave-origin-flags.conf";
 
     # Portal wiring: which backend answers the file chooser, and how
     # termfilechooser launches kitty+yazi.

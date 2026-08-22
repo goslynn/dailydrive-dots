@@ -55,7 +55,7 @@
     options = "--delete-older-than 30d";
   };
 
-  nixpkgs.config.allowUnfree = true; # brave
+  nixpkgs.config.allowUnfree = true;
 
   # The release this config was first written against. Do NOT bump it on
   # upgrade — it pins stateful defaults (database versions and the like), not

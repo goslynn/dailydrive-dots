@@ -22,23 +22,29 @@
     (callPackage ../pkgs/sioyek-hidpi.nix { })
 
     # ── Browser (conf.d/programs.lua) ──
-    brave
+    brave-origin
 
     # ── Dev toolchain ──
-    # Declared here rather than through SDKMAN/fnm-managed downloads: those
-    # ship dynamically linked binaries that expect /lib64/ld-linux, which does
-    # not exist on NixOS. fnm and pnpm themselves still work — they are only
-    # used for the Node versions they manage.
     jdk
     maven
     gradle
-    jbang
     nodejs
+    python3
+    go
     pnpm
     fnm
+    claude-code
+    github-cli
+    lazygit
+    zed-editor-fhs
+
+    #lsp
+    nil
+
 
     # Tools
-    obsidian 
+    obsidian
+    localsend
   ];
 
   # yazi's mount plugin (bound to `M` in yazi/keymap.toml) is vendored in the

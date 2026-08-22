@@ -18,6 +18,12 @@ HISTFILE="$XDG_STATE_HOME/zsh/history"
 HISTSIZE=100000
 SAVEHIST=100000
 
+# zsh won't create HISTFILE's parent dir itself — it just silently gives up
+# writing history if $XDG_STATE_HOME/zsh doesn't exist yet, which on a fresh
+# home (or after a boot that never had this dir) means every session's
+# history dies with the shell instead of persisting.
+[[ -d ${HISTFILE:h} ]] || mkdir -p ${HISTFILE:h}
+
 setopt APPEND_HISTORY
 setopt SHARE_HISTORY
 setopt HIST_IGNORE_DUPS
