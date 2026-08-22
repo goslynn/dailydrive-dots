@@ -56,6 +56,7 @@
     nerd-fonts.caskaydia-cove # kitty.conf: CaskaydiaCove Nerd Font
     noto-fonts
     noto-fonts-color-emoji
+    (callPackage ../pkgs/google-sans.nix { }) # noctalia config.toml font_family
   ];
 
   # ── Themes ───────────────────────────────────────────
