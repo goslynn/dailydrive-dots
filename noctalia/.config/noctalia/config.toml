@@ -165,8 +165,8 @@ lang = "en"
 enabled = false
 
 [theme]
-builtin = "Gruvbox"
-community_palette = "Catppuccin Mocha Lavender"
+builtin = "Catppuccin"
+community_palette = "Catppuccin Frappe Lavender"
 mode = "dark"
 source = "community"
 

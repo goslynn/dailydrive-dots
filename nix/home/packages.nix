@@ -36,6 +36,9 @@
     nodejs
     pnpm
     fnm
+
+    # Tools
+    obsidian 
   ];
 
   # yazi's mount plugin (bound to `M` in yazi/keymap.toml) is vendored in the

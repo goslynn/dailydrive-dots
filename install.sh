@@ -78,7 +78,7 @@ fi
 # ── 4. Build the system ──────────────────────────────
 step "Building and activating the system (this takes a while the first time)"
 info "sudo nixos-rebuild switch --flake $DOTFILES#$HOST"
-sudo nixos-rebuild "${NIX_FLAGS[@]}" switch --flake "$DOTFILES#$HOST"
+sudo nixos-rebuild switch --flake "$DOTFILES#$HOST" --option experminetal-features "nix-command flakes"
 
 # ── 5. noctalia's configuration ──────────────────────
 step "Restoring noctalia's configuration"
