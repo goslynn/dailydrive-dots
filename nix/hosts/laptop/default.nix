@@ -32,6 +32,7 @@
       "networkmanager"
       "video"
       "audio"
+      "docker" # talk to /run/docker.sock without sudo; see nix/system/services.nix
     ];
   };
 

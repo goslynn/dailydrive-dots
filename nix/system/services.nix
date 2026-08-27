@@ -31,6 +31,25 @@
   # they would be a second owner of the same state.
   services.udisks2.enable = true;
 
+  # ── Containers ───────────────────────────────────────
+  # Rootful docker, reached through the docker group (see extraGroups in
+  # nix/hosts/laptop/default.nix). Group membership is root-equivalent — that
+  # is the trade taken here instead of rootless mode.
+  #
+  # enableOnBoot = false does not mean "start it by hand": docker.socket is
+  # still wanted by sockets.target, so the daemon comes up on the first docker
+  # command and costs nothing until then. What it does give up is containers
+  # with a restart policy — they stay down after a reboot until something
+  # touches the socket.
+  #
+  # No docker-compose package anywhere: pkgs.docker already bundles the compose
+  # and buildx CLI plugins, so `docker compose` works out of the box and a
+  # second copy would only shadow it.
+  virtualisation.docker = {
+    enable = true;
+    enableOnBoot = false;
+  };
+
   # ── Bluetooth ────────────────────────────────────────
   # hardware.bluetooth.enable comes from recommendedServices; this only says
   # not to power the adapter on at boot.
