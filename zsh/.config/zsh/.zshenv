@@ -29,3 +29,8 @@ export GPG_TTY=$(tty)
 # ---------- PATH ----------
 # Personal binaries/scripts
 export PATH="$HOME/.local/bin:$PATH"
+
+# `go install` target (GOPATH defaults to ~/go). Keeps locally built Go tools —
+# awsacademy, mainly — on PATH without a nixos-rebuild per iteration. Nix is
+# still the right home for anything that has stopped changing.
+export PATH="$HOME/go/bin:$PATH"
