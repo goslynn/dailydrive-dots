@@ -24,7 +24,26 @@
     (callPackage ../pkgs/sioyek-hidpi.nix { })
 
     # ── Browser (conf.d/programs.lua) ──
-    brave-origin
+    #
+    # commandLineArgs, not brave-origin-flags.conf. Reading
+    # ~/.config/<name>-flags.conf is an *Arch packaging patch*, not upstream
+    # Chromium behaviour — `grep -a flags.conf` on the nixpkgs wrapper comes
+    # back empty, so that file (still linked by nix/home/dotfiles.nix, and
+    # still live on the master/Arch branch) is inert here. nixpkgs threads
+    # commandLineArgs through makeWrapper's --add-flags instead, so these apply
+    # no matter how Brave is launched, including from the .desktop entry.
+    #
+    # WebRTCPipeWireCapturer is what routes getDisplayMedia() through the
+    # ScreenCast portal to xdg-desktop-portal-hyprland rather than through an
+    # X11 capture path. Recent Chromium enables it by default under Wayland;
+    # naming it explicitly keeps that from silently regressing.
+    #
+    # The wrapper already appends --ozone-platform-hint=auto, which is why
+    # Brave is a native Wayland client today (`hyprctl clients` reports
+    # xwayland=false) despite the flags file never being read.
+    (brave-origin.override {
+      commandLineArgs = "--enable-features=WebRTCPipeWireCapturer";
+    })
 
     # ── Dev toolchain ──
     jdk
@@ -68,9 +87,13 @@
     # Tools
     obsidian
     localsend
+    bruno
+    bruno-cli
 
     # general software
     spotify
+    onlyoffice-desktopeditors
+    onlyoffice-documentserver
   ];
 
   # yazi's mount plugin (bound to `M` in yazi/keymap.toml) is vendored in the

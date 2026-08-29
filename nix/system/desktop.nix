@@ -53,6 +53,29 @@
     xdg-desktop-portal-termfilechooser
   ];
 
+  # These portals are all Wants= of graphical-session.target, and
+  # xdg-desktop-portal.service additionally carries
+  # Requisite=graphical-session.target — so with that target down, every portal
+  # D-Bus activation fails and apps quietly use their own built-in dialogs
+  # instead. Nothing on this system raises the target on its own (greetd execs
+  # Hyprland directly, and noctalia is deliberately not a systemd service), so
+  # conf.d/autostart.lua starts nixos-fake-graphical-session.target at session
+  # startup. See the comment there.
+
+  # ── Browser PDF policy ───────────────────────────────
+  # mimeapps.list only governs what opens a PDF *file*; a PDF served over http
+  # never reaches it, because Chromium's bundled PDF viewer claims the
+  # navigation first. AlwaysOpenPdfExternally disables that viewer, so Brave
+  # hands the file to the download flow and opening it goes through xdg-open →
+  # application/pdf=sioyek.desktop.
+  #
+  # Path confirmed against the binary: brave-origin reads both
+  # /etc/brave/policies and /etc/chromium/policies (`grep -a` on
+  # opt/brave.com/*/brave).
+  environment.etc."brave/policies/managed/pdf.json".text = builtins.toJSON {
+    AlwaysOpenPdfExternally = true;
+  };
+
   # ── Shell (noctalia) ─────────────────────────────────
   # systemd.enable stays off on purpose: conf.d/autostart.lua launches noctalia
   # from hl.on("hyprland.start", ...), and that stays the single owner of its

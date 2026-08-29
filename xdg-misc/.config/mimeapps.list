@@ -1,11 +1,61 @@
+# XDG default applications.
+#
+# [Default Applications] is the ONLY authoritative section: xdg-open / gio /
+# every toolkit reads it first. Anything not listed here falls through to the
+# mimeinfo.cache association list, where the winner is essentially whichever
+# .desktop happens to declare the MIME type — which is how PDFs ended up in
+# Brave (brave-origin.desktop ships MimeType=application/pdf;...). So a type
+# we care about gets an explicit line here, never an implicit fallback.
+#
+# Note: opening a PDF from a *link inside Brave* does not go through this file
+# at all — Chromium's built-in PDF viewer intercepts it first. That is turned
+# off by the AlwaysOpenPdfExternally policy in nix/system/desktop.nix.
 
 [Default Applications]
+
+# ── File manager ────────────────────────────────────────
+# yazi.desktop is the home-manager-generated entry from nix/home/dotfiles.nix
+# (Exec=kitty -e yazi %f), not the one shipped by pkgs.yazi.
 inode/directory=yazi.desktop
-x-scheme-handler/jetbrains=jetbrainsd.desktop
-x-scheme-handler/claude-cli=claude-code-url-handler.desktop
-x-scheme-handler/obsidian=obsidian.desktop
+
+# ── Documents ───────────────────────────────────────────
+application/pdf=sioyek.desktop
+
+# ── Browser ─────────────────────────────────────────────
 text/html=brave-origin.desktop
+application/xhtml+xml=brave-origin.desktop
 x-scheme-handler/http=brave-origin.desktop
 x-scheme-handler/https=brave-origin.desktop
 x-scheme-handler/about=brave-origin.desktop
 x-scheme-handler/unknown=brave-origin.desktop
+
+# ── Video ───────────────────────────────────────────────
+video/mp4=mpv.desktop
+video/x-matroska=mpv.desktop
+video/webm=mpv.desktop
+video/quicktime=mpv.desktop
+video/x-msvideo=mpv.desktop
+video/mpeg=mpv.desktop
+video/x-flv=mpv.desktop
+video/3gpp=mpv.desktop
+video/ogg=mpv.desktop
+video/x-ms-wmv=mpv.desktop
+video/x-m4v=mpv.desktop
+
+# ── Audio ───────────────────────────────────────────────
+audio/mpeg=mpv.desktop
+audio/flac=mpv.desktop
+audio/ogg=mpv.desktop
+audio/opus=mpv.desktop
+audio/wav=mpv.desktop
+audio/x-wav=mpv.desktop
+audio/mp4=mpv.desktop
+audio/aac=mpv.desktop
+audio/webm=mpv.desktop
+audio/x-matroska=mpv.desktop
+
+# ── App URL handlers ────────────────────────────────────
+x-scheme-handler/jetbrains=jetbrainsd.desktop
+x-scheme-handler/claude-cli=claude-code-url-handler.desktop
+x-scheme-handler/obsidian=obsidian.desktop
+x-scheme-handler/bruno=bruno.desktop

@@ -52,6 +52,12 @@ in
     "hypr/hyprland.lua".source = link "hypr/.config/hypr/hyprland.lua";
     "hypr/conf.d".source = link "hypr/.config/hypr/conf.d";
 
+    # Screencast backend config. Lives next to the Hyprland config because
+    # that is the only path xdph looks at (`~/.config/hypr/xdph.conf`, the
+    # other being /tmp/xdph.conf) — it is not a conf.d/ fragment and Hyprland
+    # itself never parses it.
+    "hypr/xdph.conf".source = link "hypr/.config/hypr/xdph.conf";
+
     # These fold at directory level, exactly as stow did. noctalia writes into
     # kitty/themes/, btop/themes/ and yazi/flavors/ through the symlink, so the
     # generated files land in the repo.
