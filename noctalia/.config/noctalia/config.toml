@@ -5,7 +5,7 @@ ui_scale = 1.1000000089406967
 order = [ "topbar" ]
 
     [bar.topbar]
-    center = [ "date", "clock" ]
+    center = [ "date", "text_2", "clock" ]
     end = [ "tray", "network", "bluetooth", "brightness", "input_volume", "output_volume", "battery" ]
     font_family = "Google Sans Medium"
     margin_ends = 0
@@ -199,7 +199,7 @@ hide_when_no_connected_device = true
 show_label = false
 
 [widget.date]
-enabled = false
+enabled = true
 format = "{:%d/%m}"
 
 [widget.input_volume]
@@ -219,6 +219,10 @@ vpn_status = "both"
 [widget.output_volume]
 mute_color = "on_surface"
 show_label = false
+
+[widget.text_2]
+text = "-"
+type = "text"
 
 [widget.tray]
 drawer = true
