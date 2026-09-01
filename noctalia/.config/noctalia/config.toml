@@ -21,7 +21,7 @@ warning_threshold = 20
 
 [control_center]
 sidebar_section = "none"
-width = 900
+width = 750
 
     [control_center.calendar]
     show_events_card = false

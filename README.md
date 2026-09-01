@@ -19,7 +19,9 @@ aquí: los dotfiles y, en `nix/`, la declaración del sistema.
 - [Cómo modificar cada herramienta](#cómo-modificar-cada-herramienta)
 - [Noctalia (shell)](#noctalia-shell)
 - [Monitores](#monitores)
-- [Theming (Catppuccin Mocha)](#theming-catppuccin-mocha)
+- [Theming (Catppuccin Frappé Lavender)](#theming-catppuccin-frappé-lavender)
+- [Diálogos de fichero (yazi como file chooser)](#diálogos-de-fichero-yazi-como-file-chooser)
+- [XWayland](#xwayland)
 - [Wallpaper](#wallpaper)
 - [Discos extraíbles (USB)](#discos-extraíbles-usb)
 - [Keybindings](#keybindings)
@@ -96,6 +98,8 @@ sudo nixos-rebuild switch --flake ~/.dotfiles#laptop
 | `btop` `mpv`  | Monitor de sistema, reproductor                    |
 | `sioyek`      | Lector de PDF                                      |
 | `brave-origin`| Flags de arranque (Wayland/ozone)                  |
+| `gtk`         | `gtk-3.0/settings.ini` y `gtk-4.0/settings.ini`    |
+| `qt`          | `qt6ct/qt6ct.conf` y `Kvantum/kvantum.kvconfig`    |
 | `xdg-misc`    | Ficheros sueltos de `~/.config`: MIME y portales   |
 | `noctalia`    | **No se enlaza** — copia de la config del shell, ver [Noctalia](#noctalia-shell) |
 | `nix/`        | Declaración del sistema (no se enlaza a `$HOME`)   |
@@ -328,7 +332,7 @@ deje todas las salidas apagadas.
 
 ---
 
-## Theming (Catppuccin Mocha)
+## Theming (Catppuccin Frappé Lavender)
 
 **El tema lo posee noctalia por completo.** No hay paleta mantenida a mano en
 este repo, y no se debe reintroducir: el viejo paquete `themes/catppuccin/mocha/`
@@ -369,6 +373,140 @@ mapeado a mano.
 
 No hay multi-theming ni cambio en vivo.
 
+### Toolkits (GTK, Qt) — lo que noctalia NO genera
+
+noctalia no tiene plantillas para GTK ni para Qt, así que esa parte son paquetes
+Catppuccin de nixpkgs (empaquetados aguas arriba, no paletas escritas a mano) más
+los ficheros de config que los seleccionan. Flavour y accent son **Frappé +
+lavender**, los mismos que la paleta de noctalia, y aparecen escritos en seis
+sitios que tienen que coincidir:
+
+| Dónde                                    | Qué declara                        |
+|------------------------------------------|------------------------------------|
+| `nix/system/desktop.nix`                 | los paquetes y sus `override`      |
+| `conf.d/env.lua`                         | `GTK_THEME`                        |
+| `gtk/.config/gtk-{3,4}.0/settings.ini`   | tema, iconos, cursor, fuente       |
+| `qt/.config/qt6ct/qt6ct.conf`            | `color_scheme_path`, `icon_theme`  |
+| `qt/.config/Kvantum/kvantum.kvconfig`    | el tema de Kvantum                 |
+| `nix/home/theming.nix`                   | los gsettings que lee el portal    |
+
+> [!WARNING]
+> Nada sincroniza esto con noctalia: no hay plantilla de noctalia para GTK ni
+> para Qt, así que el día que cambies su paleta hay que repetir el cambio a mano
+> en los seis sitios de arriba. Si no, la barra va por un lado y las ventanas
+> por otro.
+
+Tres capas, cada una para un público distinto:
+
+- **GTK3** — `GTK_THEME` gana sobre todo lo demás. `settings.ini` está para lo
+  que no ve el entorno de la sesión (nwg-look, unidades de systemd) y para las
+  claves que no tienen variable (iconos, cursor, fuente, hinting).
+- **Qt6** — `QT_QPA_PLATFORMTHEME=qt6ct`, y `qt6ct.conf` fija estilo (Kvantum),
+  paleta, iconos y fuentes. Ya **no** se usa `QT_QPA_PLATFORMTHEME=gtk3`: ese
+  puente traducía mal la paleta (mezclaba colores de flavours distintos) y
+  sobre todo sus diálogos de fichero eran GTK locales, nunca del portal.
+- **dconf/gsettings** — `nix/home/theming.nix`. Es lo único que lee el portal
+  Settings, y por tanto lo único que hace que Chromium/Electron, Qt6 y
+  libadwaita se pongan en oscuro. Requiere `programs.dconf.enable`.
+
+Para que las apps Qt de nixpkgs vean los plugins de qt6ct y Kvantum hace falta
+`qt.enable = true` en `nix/system/desktop.nix`: es lo que exporta
+`QT_PLUGIN_PATH` apuntando a los perfiles. Sin esa línea, cada app Qt solo mira
+el `QT_PLUGIN_PATH` que le inyecta su propio wrapper y el theming no carga.
+
+Y los temas viven en subdirectorios de `share/` que NixOS no enlaza por defecto,
+así que `share/Kvantum` y `share/qt6ct` están en `environment.pathsToLink`. Si
+faltan, las apps Qt salen con la paleta gris de Kvantum o con Fusion y nadie
+avisa.
+
+Comprobación rápida tras un `switch`:
+
+```sh
+echo $QT_PLUGIN_PATH | tr ':' '\n' | grep current-system   # no debe estar vacío
+ls /run/current-system/sw/share/Kvantum/                   # catppuccin-frappe-lavender
+gsettings get org.gnome.desktop.interface color-scheme     # 'prefer-dark'
+```
+
+---
+
+## Diálogos de fichero (yazi como file chooser)
+
+Cuando una app pide abrir o guardar, lo que sale es **kitty + yazi**. La cadena
+es siempre la misma:
+
+```
+app → org.freedesktop.portal.FileChooser → xdg-desktop-portal
+    → xdg-desktop-portal-termfilechooser → yazi-wrapper.sh → kitty -e yazi
+```
+
+El backend se elige en `xdg-misc/.config/xdg-desktop-portal/hyprland-portals.conf`
+y se configura en `xdg-misc/.config/xdg-desktop-portal-termfilechooser/config`.
+Eso ya estaba. Lo que faltaba era que cada toolkit *decidiera* usar el portal,
+porque por defecto casi ninguno lo hace:
+
+| Toolkit             | Qué lo activa                        | Dónde                |
+|---------------------|--------------------------------------|----------------------|
+| Chromium / Electron | nada, ya usa el portal si existe     | —                    |
+| GTK3                | `GTK_USE_PORTAL=1`                   | `conf.d/env.lua`     |
+| GTK4 / libadwaita   | autodetecta por D-Bus; `GDK_DEBUG=portals` lo fuerza | `conf.d/env.lua` |
+| Qt6                 | `standard_dialogs=xdgdesktopportal`  | `qt6ct.conf`         |
+
+El caso de Qt es el menos obvio. qt6ct sabe delegar los diálogos estándar en
+otro platform theme, y `xdgdesktopportal` (que aporta `libqxdgdesktopportal.so`
+de qtbase) es uno válido — así se tiene a la vez el tema completo de qt6ct y el
+file chooser del portal. **Ojo:** esa clave se lee del grupo `[Appearance]`
+aunque la GUI de qt6ct la enseñe en la pestaña *Interface*; ponerla en
+`[Interface]` no hace nada y no da ningún error.
+
+Requisito previo de todo esto: `graphical-session.target` tiene que estar
+arriba, que es lo que hace `conf.d/autostart.lua` con
+`nixos-fake-graphical-session.target`. Con el target caído no hay portales y
+cada app se cae a su diálogo interno en silencio.
+
+---
+
+## XWayland
+
+`conf.d/xwayland.lua` fija `force_zero_scaling = true`: las apps X11 renderizan
+a píxel físico nativo en vez de dibujarse a tamaño lógico y ampliarse como
+bitmap (que es lo que las hacía borrosas con el scale 1.25 de este portátil).
+
+El precio es que entonces XWayland les dice 96 DPI y toda app X11 sale al 80%
+del tamaño correcto. La solución general es el recurso X **`Xft.dpi`**, que el
+propio `xwayland.lua` calcula a partir del scale real del monitor y aplica con
+`xrdb` al arrancar la sesión (y en cada `monitor.added`):
+
+- **Qt6/xcb** lo toma como DPI lógico → devicePixelRatio 1.25.
+- **GTK3/X11** escala la tipografía. Los widgets se quedan a escala 1: GTK solo
+  admite factores enteros (`GDK_SCALE`) y esa variable contaminaría también a
+  las apps GTK en Wayland.
+- **Chromium/X11** lo lee vía `gtk-xft-dpi`.
+
+Es un recurso del servidor X, así que no puede afectar a los clientes Wayland —
+justo lo que se quiere. Las apps X11 lo leen **al arrancar**: las ya abiertas no
+cambian.
+
+Lo mejor para una app X11 es, de todas formas, dejar de serlo:
+
+- `NIXOS_OZONE_WL=1` — los wrappers de nixpkgs (obsidian, spotify, bruno…) solo
+  añaden `--ozone-platform-hint=auto` si ven esta variable. Sin ella arrancan
+  todos bajo XWayland.
+- `ELECTRON_OZONE_PLATFORM_HINT=auto` — lo mismo para las Electron que no vienen
+  envueltas por nixpkgs.
+- `QT_QPA_PLATFORM=wayland;xcb` — Wayland cuando se puede, xcb cuando no.
+
+Y una que no es de escalado sino de que la ventana se dibuje: Java/AWT asume un
+WM *reparenting*, que Hyprland no es, y sin `_JAVA_AWT_WM_NONREPARENTING=1` las
+ventanas Swing salen en gris. Afecta a todo lo que corra sobre el JDK, IntelliJ
+incluido.
+
+Comprobación:
+
+```sh
+xrdb -query | grep Xft.dpi                       # 120 con scale 1.25
+hyprctl clients -j | jq -r '.[] | "\(.class) xwayland=\(.xwayland)"'
+```
+
 ---
 
 ## Wallpaper
@@ -400,13 +538,13 @@ desde tus copias de seguridad.
 
 ### Theme fijo, no ligado al wallpaper
 
-El theme es Catppuccin Mocha fijo (`theme.source = "builtin"`,
-`theme.builtin = "Catppuccin"` en `settings.toml`) — cambiar de wallpaper
-**no** debe cambiar la paleta. Dos trampas del picker de wallpaper que sí la
-cambian, a evitar:
+El theme es **Catppuccin Frappé Lavender** fijo (`theme.source = "community"`,
+`theme.community_palette = "Catppuccin Frappe Lavender"` en `settings.toml`) —
+cambiar de wallpaper **no** debe cambiar la paleta. Dos trampas del picker de
+wallpaper que sí la cambian, a evitar:
 
 - **`theme.source = "wallpaper"`** genera una paleta nueva del wallpaper cada
-  vez que cambia. No usar — mantener `source` en `builtin`.
+  vez que cambia. No usar — mantener `source` en `community`.
 - **Favoritos (★)**: marcar como favorito un wallpaper mientras está aplicado
   guarda junto a la ruta el `theme_mode`/paleta activos en ese momento
   (`[[wallpaper.favorite]]` en `settings.toml`), y volver a seleccionar ese
@@ -417,7 +555,7 @@ cambian, a evitar:
 Para forzar el theme fijo por CLI sin tocar la GUI:
 
 ```sh
-noctalia msg color-scheme-set builtin Catppuccin
+noctalia msg color-scheme-set community "Catppuccin Frappe Lavender"
 noctalia msg theme-mode-set dark
 noctalia msg templates-apply
 ```
@@ -572,6 +710,27 @@ cambio hasta que repinchas o corres `sudo udevadm trigger`.
 
 Yazi está registrado como default de `inode/directory` vía `~/.config/mimeapps.list`,
 así que `xdg-open <dir>` desde cualquier app también lo abre.
+
+### Teclado
+
+| Bind                    | Acción                              |
+|-------------------------|-------------------------------------|
+| `SUPER + SHIFT + SPACE` | Ciclar layout de teclado (`us` → `es`) |
+
+El ciclo lo define `layouts` en `conf.d/input.lua`; el primero de la lista es
+con el que arranca la sesión. La barra de noctalia muestra el layout activo
+(`show_keyboard_layout`), porque cada cambio emite `activelayout` en el
+socket2 de Hyprland.
+
+Detalle de implementación: el bind recibe una **función Lua**, no un
+`hl.dsp.*`. Hyprland 0.56 no expone `switchxkblayout` en la API Lua —
+`hyprctl eval` sobre `hl.dsp` no lo lista— así que cargar `"us,es"` en un
+único keymap dejaría el índice de grupo sin forma de moverse. En vez de eso
+`input.cycle_layout()` reescribe `input:kb_layout` con un layout a la vez.
+Tampoco sirve la opción xkb `grp:win_space_toggle`: es `SUPER + SPACE`, ya
+tomada por el launcher.
+
+Ojo: `hyprctl reload` reejecuta la config, así que el ciclo vuelve a `us`.
 
 ### Ventanas
 

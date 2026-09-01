@@ -69,6 +69,26 @@ in
     "mpv".source = link "mpv/.config/mpv";
     "sioyek".source = link "sioyek/.config/sioyek";
 
+    # Toolkit theming. Linked file by file, not by directory, on purpose:
+    #
+    #   ~/.config/gtk-3.0   GTK writes bookmarks (and gtk.css if you ever use a
+    #                       theme editor) next to settings.ini
+    #   ~/.config/qt6ct     the qt6ct GUI writes qt6ct.conf back via QSaveFile,
+    #                       i.e. write-then-rename, which would replace the
+    #                       symlink with a plain file rather than follow it
+    #   ~/.config/Kvantum   same story with kvantummanager
+    #
+    # Folding the directories would either swallow that state into the repo or
+    # break on the first write. Keeping the directories real and only linking
+    # the files we own means a stray write lands beside them, harmlessly.
+    #
+    # The counterpart to these files is nix/home/theming.nix (gsettings) and the
+    # package list in nix/system/desktop.nix; all three name the same theme.
+    "gtk-3.0/settings.ini".source = link "gtk/.config/gtk-3.0/settings.ini";
+    "gtk-4.0/settings.ini".source = link "gtk/.config/gtk-4.0/settings.ini";
+    "qt6ct/qt6ct.conf".source = link "qt/.config/qt6ct/qt6ct.conf";
+    "Kvantum/kvantum.kvconfig".source = link "qt/.config/Kvantum/kvantum.kvconfig";
+
     # Single files.
     "starship.toml".source = link "starship/.config/starship.toml";
     "mimeapps.list".source = link "xdg-misc/.config/mimeapps.list";

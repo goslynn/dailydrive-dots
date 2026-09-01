@@ -92,8 +92,8 @@
 
     # general software
     spotify
-    onlyoffice-desktopeditors
-    onlyoffice-documentserver
+    libreoffice-fresh
+    zapzap
   ];
 
   # yazi's mount plugin (bound to `M` in yazi/keymap.toml) is vendored in the

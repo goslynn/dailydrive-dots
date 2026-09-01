@@ -3,6 +3,11 @@
 -- Bare module name: conf.d/ is on package.path, set by hyprland.lua.
 local programs = require("programs")
 
+-- input.lua is already loaded by the time this file runs (hyprland.lua requires
+-- it first), so this hands back the same table — and with it the same `current`
+-- layout counter. Requiring it here does not re-apply its hl.config().
+local input = require("input")
+
 local mainMod = "SUPER"
 
 -- ── Apps ─────────────────────────────────────────────
@@ -18,6 +23,12 @@ hl.bind(mainMod .. " + D",      hl.dsp.exec_cmd("noctalia msg panel-toggle contr
 hl.bind(mainMod .. " + C",      hl.dsp.exec_cmd("noctalia msg settings-toggle"))
 hl.bind(mainMod .. " + ESCAPE", hl.dsp.exec_cmd("noctalia msg panel-toggle session"))
 hl.bind(mainMod .. " + SHIFT + D", hl.dsp.exec_cmd("noctalia msg panel-toggle control-center calendar"))
+
+-- ── Keyboard layout ──────────────────────────────────
+-- Cycles conf.d/input.lua's `layouts` (us -> es -> us). Passed as a plain Lua
+-- function rather than an hl.dsp.* dispatcher because there is no
+-- switchxkblayout one — see the comment in input.lua.
+hl.bind(mainMod .. " + SHIFT + SPACE", input.cycle_layout)
 
 -- ── Window control ───────────────────────────────────
 hl.bind(mainMod .. " + Q", hl.dsp.window.close())

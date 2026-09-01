@@ -1,0 +1,16 @@
+# Kvantum — qué tema SVG usa el estilo `kvantum` que selecciona qt6ct.conf.
+#
+# Kvantum busca los temas en <dir>/Kvantum/<tema>/ para cada directorio de
+# datos XDG, así que basta con que pkgs.catppuccin-kvantum esté en
+# environment.systemPackages: instala
+#   share/Kvantum/catppuccin-frappe-lavender/{...kvconfig,...svg}
+# y /run/current-system/sw/share ya está en XDG_DATA_DIRS.
+#
+# El nombre tiene que coincidir con el override variant/accent de
+# nix/system/desktop.nix.
+#
+# Lo reescribe `kvantummanager` si se abre y se guarda desde ahí; igual que
+# qt6ct.conf, la fuente de verdad es este fichero del repo.
+
+[General]
+theme=catppuccin-frappe-lavender

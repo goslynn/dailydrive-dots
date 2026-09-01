@@ -35,12 +35,16 @@
 
       # Mirrors conf.d/env.lua
       cursor = {
-        theme = "catppuccin-mocha-dark-cursors";
+        theme = "catppuccin-frappe-dark-cursors";
         size = 24;
-        path = "${pkgs.catppuccin-cursors.mochaDark}/share/icons";
+        path = "${pkgs.catppuccin-cursors.frappeDark}/share/icons";
       };
 
-      # Mirrors conf.d/input.lua
+      # Mirrors the *first* layout of conf.d/input.lua's cycle, on purpose.
+      # The greeter runs its own throwaway compositor with no keybind config,
+      # so there is nothing to switch layouts with once it's up — a "us,es"
+      # here would just load a second group nobody can reach. Password entry
+      # stays on us; the es layout starts at the session.
       keyboard.layout = "us";
 
       # Take colors from whatever noctalia last synced.

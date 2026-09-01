@@ -22,6 +22,11 @@
     wl-clipboard
     cliphist
 
+    # conf.d/xwayland.lua pipes `Xft.dpi` into it at session start so XWayland
+    # clients pick up the monitor scale. Runs from the compositor's PATH, not
+    # from a shell, so it cannot live in the home profile only.
+    xrdb # top-level, not xorg.xrdb: that set is deprecated in 26.11
+
     # Referenced by noctalia: mpvpaper plugin for video wallpapers, satty as
     # the external screenshot annotation editor.
     mpv
