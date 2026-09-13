@@ -12,4 +12,5 @@ return {
     terminal     = "kitty",
     browser      = "brave-origin",
     file_manager = "kitty -e yazi",
+    system_monitor = "kitty -e btop",
 }

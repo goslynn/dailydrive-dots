@@ -4,8 +4,20 @@
 # upower, power-profiles-daemon) are already turned on by
 # programs.noctalia.recommendedServices in ./desktop.nix. What is left here is
 # audio, removable media, and the deliberate omissions.
-{ ... }:
+{ pkgs, ... }:
 {
+  # ── Packet capture ───────────────────────────────────
+  # programs.wireshark.package defaults to wireshark-cli (tshark, dumpcap,
+  # capinfos, mergecap, ... — no GUI, no .desktop entry). Overriding it to
+  # wireshark pulls in the Qt GUI too, which is what puts an entry in the
+  # launcher. It also grants dumpcap cap_net_raw+cap_net_admin via a setcap
+  # wrapper, so members of the "wireshark" group can capture without sudo.
+  # Membership is granted in extraGroups in nix/hosts/laptop/default.nix.
+  programs.wireshark = {
+    enable = true;
+    package = pkgs.wireshark;
+  };
+
   # ── Audio ────────────────────────────────────────────
   # No WirePlumber configuration on purpose. WirePlumber's default is to keep
   # A2DP for playback and switch to HSP/HFP when an app opens the mic; on the

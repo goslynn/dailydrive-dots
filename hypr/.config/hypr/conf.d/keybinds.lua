@@ -14,6 +14,7 @@ local mainMod = "SUPER"
 hl.bind(mainMod .. " + T", hl.dsp.exec_cmd(programs.terminal))
 hl.bind(mainMod .. " + F", hl.dsp.exec_cmd(programs.file_manager))
 hl.bind(mainMod .. " + B", hl.dsp.exec_cmd(programs.browser))
+hl.bind(mainMod .. " + M", hl.dsp.exec_cmd(programs.system_monitor))
 
 
 -- ── Noctalia panels (IPC: noctalia msg panel-toggle <id>) ────

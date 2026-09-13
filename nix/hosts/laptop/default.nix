@@ -73,6 +73,7 @@
       "video"
       "audio"
       "docker" # talk to /run/docker.sock without sudo; see nix/system/services.nix
+      "wireshark" # capture without sudo via dumpcap's setcap wrapper; see nix/system/services.nix
     ];
   };
 

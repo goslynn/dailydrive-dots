@@ -14,6 +14,7 @@
     jq
     zip
     unzip
+    openssl
 
     # ── TUI apps with configs in this repo ──
     yazi
@@ -22,6 +23,9 @@
 
     # PDF viewer, wrapped for HiDPI under XWayland.
     (callPackage ../pkgs/sioyek-hidpi.nix { })
+
+    # Image viewer — native Wayland window, keyboard-driven, mpv-style.
+    imv
 
     # ── Browser (conf.d/programs.lua) ──
     #
@@ -44,6 +48,7 @@
     (brave-origin.override {
       commandLineArgs = "--enable-features=WebRTCPipeWireCapturer";
     })
+    chromium
 
     # ── Dev toolchain ──
     jdk
@@ -76,6 +81,9 @@
     # understand a plain Makefile project (cmake emits one on its own).
     bear
 
+	# AI 
+	openspec 
+	
     # ── Containers ──
     # The docker CLI and daemon come from virtualisation.docker in
     # nix/system/services.nix, not from here.
