@@ -39,6 +39,7 @@
           ./nix/system/greeter.nix
           ./nix/system/services.nix
           ./nix/system/packages.nix
+          ./nix/system/gaming.nix
 
           noctalia-greeter.nixosModules.default
 

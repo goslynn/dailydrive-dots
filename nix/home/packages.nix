@@ -102,6 +102,20 @@
     spotify
     libreoffice-fresh
     zapzap
+
+    # ── Gaming ──
+    # Steam, gamemode, nix-ld, 32-bit graphics, and the nixpkgs-pinned
+    # proton-ge-bin floor come from nix/system/gaming.nix (they need to exist
+    # outside the user session). RetroArch here brings the frontend only —
+    # cores are fetched through its own online updater at first run, not
+    # packaged individually here.
+    retroarch
+
+    # Fetches specific GE-Proton/Wine-GE builds straight from upstream into
+    # ~/.steam/root/compatibilitytools.d, for when the proton-ge-bin pinned
+    # by flake.lock is a version too old for a given game. Steam picks up
+    # anything dropped there without needing a rebuild.
+    protonup-qt
   ];
 
   # yazi's mount plugin (bound to `M` in yazi/keymap.toml) is vendored in the
