@@ -1,0 +1,22 @@
+<!--
+  Air-gapped segment: a bare layer 2 bridge and nothing else.
+
+  No <forward> (so nothing leaves, as in lab.xml) and no <ip> either, which is
+  the actual difference: the host takes no address on this bridge and no
+  dnsmasq runs against it. Guests here cannot reach this machine at all, and
+  they have to be addressed statically by hand — say 10.20.20.10/24 and
+  10.20.20.20/24 with no gateway.
+
+  That hand-addressing is the whole cost, and the reason ./lab.xml exists as
+  the default choice. Use this one when the target is something that should
+  genuinely never see the host: live malware samples, a ransomware exercise, a
+  Windows image with SMBv1 open.
+
+    sudo virsh net-define /etc/libvirt-networks/lab-airgap.xml
+    sudo virsh net-start lab-airgap
+    sudo virsh net-autostart lab-airgap
+-->
+<network>
+  <name>lab-airgap</name>
+  <bridge name='virbr-air' stp='on' delay='0'/>
+</network>

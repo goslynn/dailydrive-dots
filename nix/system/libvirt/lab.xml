@@ -1,0 +1,32 @@
+<!--
+  Lab segment: real layer 2 between guests, no way out.
+
+  There is no <forward> element, which is what makes the network isolated —
+  libvirt installs rules that drop anything trying to leave the bridge. There
+  IS an <ip>, so the host holds 10.10.10.1 and dnsmasq serves DHCP: targets on
+  this network are reachable from the host, which is what lets a browser here
+  open a web app running on a guest.
+
+  Everything a class exercise needs from a switch works, because virbr-lab is
+  one: ARP is real, broadcast and multicast reach every port, and a guest in
+  promiscuous mode sees its neighbours' frames.
+
+  Define once (this is libvirt state, not something the rebuild manages):
+
+    sudo virsh net-define /etc/libvirt-networks/lab.xml
+    sudo virsh net-start lab
+    sudo virsh net-autostart lab
+
+  10.10.10.0/24 is deliberately nothing like 192.168.100.0/24 (the house LAN)
+  or 192.168.122.0/24 (libvirt's own NAT net), so a wrong-subnet mistake during
+  an exercise is obvious rather than ambiguous.
+-->
+<network>
+  <name>lab</name>
+  <bridge name='virbr-lab' stp='on' delay='0'/>
+  <ip address='10.10.10.1' netmask='255.255.255.0'>
+    <dhcp>
+      <range start='10.10.10.100' end='10.10.10.200'/>
+    </dhcp>
+  </ip>
+</network>

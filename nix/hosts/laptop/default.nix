@@ -74,6 +74,11 @@
       "audio"
       "docker" # talk to /run/docker.sock without sudo; see nix/system/services.nix
       "wireshark" # capture without sudo via dumpcap's setcap wrapper; see nix/system/services.nix
+      "libvirtd" # manage VMs without sudo; see nix/system/virtualisation.nix
+      # Both "docker" and "libvirtd" are root-equivalent: either socket can be
+      # asked to start a container/domain that mounts the host's / read-write.
+      # Accepted deliberately on a single-user laptop — but worth remembering
+      # now that the lab runs deliberately vulnerable guests on this machine.
     ];
   };
 
