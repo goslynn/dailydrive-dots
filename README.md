@@ -835,5 +835,16 @@ Ya no arrancan: `shikane` (monitores ahora en `monitors.lua`), `qs`
 - **Un binario descargado a mano no arranca** (`No such file or directory` sobre
   un ejecutable que existe): espera `/lib64/ld-linux-x86-64.so.2`, que no existe
   en NixOS. Usa el paquete de nixpkgs o un devShell. `nix-ld` no está activado.
+- **Google Cast no detecta la TV** (y el móvil en la misma WiFi sí): es el
+  firewall de este equipo, no la red. El descubrimiento (mDNS y SSDP) contesta
+  al *grupo multicast* o desde la IP del dispositivo, nunca al socket que
+  preguntó, así que conntrack no empareja la respuesta con la consulta y
+  `nixos-fw` la rechaza — la pregunta sale y la respuesta se tira. Lo abre
+  [`nix/system/networking.nix`](nix/system/networking.nix), **solo en
+  `wlp2s0`**: UDP 5353 (mDNS), 1900 (SSDP/DIAL) y el rango efímero
+  32768-60999 (respuestas unicast a preguntas multicast). Comprobar sin abrir
+  el navegador: `avahi-browse -rt _googlecast._tcp` debe listar la TV en un par
+  de segundos. Los puertos 8008/8009 TCP que suele recomendar internet son de
+  la *tele*, no hay nada que abrir para ellos aquí.
 - Más troubleshooting específico de NixOS (greeter, rollback, portales):
   **[INSTALL.md](INSTALL.md#troubleshooting)**.
