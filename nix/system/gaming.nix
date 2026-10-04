@@ -82,6 +82,19 @@
       stdenv.cc.cc.lib # libstdc++
       zlib
       openssl
+      freetype # libfreetype.so.6 — text rendering, common in SDL2/engine ports
+
+      # libdbus-1.so.3 — SDL3's native file-dialog API (SDL_ShowOpenFileDialog)
+      # dlopens this at runtime to talk to the xdg-desktop-portal FileChooser
+      # over D-Bus; it's SDL's *other* supported backend besides shelling out
+      # to zenity (which we don't install — yazi via the portal is our picker,
+      # see xdg-misc/.config/xdg-desktop-portal-termfilechooser). Without this
+      # lib, SDL can't load either backend and the dialog fails outright —
+      # "File dialog driver unsupported (supported values ... 'zenity' and
+      # 'portal')" — even though the portal itself is running fine; confirmed
+      # by dlopen'ing /org/freedesktop/portal/desktop FileChooser.OpenFile by
+      # hand, which worked, while Dusklight's own log showed that exact error.
+      dbus
     ];
   };
 
