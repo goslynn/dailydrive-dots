@@ -18,6 +18,7 @@ aquí: los dotfiles y, en `nix/`, la declaración del sistema.
 - [Paquetes incluidos](#paquetes-incluidos)
 - [Cómo modificar cada herramienta](#cómo-modificar-cada-herramienta)
 - [Noctalia (shell)](#noctalia-shell)
+- [AppImages](#appimages)
 - [Monitores](#monitores)
 - [Theming (Catppuccin Frappé Lavender)](#theming-catppuccin-frappé-lavender)
 - [Diálogos de fichero (yazi como file chooser)](#diálogos-de-fichero-yazi-como-file-chooser)
@@ -298,6 +299,49 @@ energía ya cubre esto interactivamente), `window-switcher`, `wallpaper-set`,
 
 **Ver logs:** `noctalia msg log-level-set debug`, o relanzarlo en foreground
 (`pkill noctalia && noctalia`).
+
+---
+
+## AppImages
+
+El launcher de noctalia (`SUPER + SPACE`) es un lanzador freedesktop más: solo
+lista lo que haya en `~/.local/share/applications/*.desktop`. Un `.AppImage`
+suelto no aparece ahí solo, hay que generarle la entrada.
+
+`appimage-install` (`scripts/.local/bin/appimage-install`) hace los dos pasos:
+
+```bash
+appimage-install ~/Downloads/Algo-1.2.3-x86_64.AppImage
+```
+
+1. Mueve el binario a `~/Applications/` (convención: ahí viven todos, nada de
+   dejarlos en `~/Downloads`).
+2. Le hace `--appimage-extract` a un temporal para sacar el `.desktop` y el
+   icono embebidos (son obligatorios en la raíz del squashfs por spec de
+   AppImage) y con eso escribe:
+   - `~/.local/share/applications/<slug>.desktop`, con `Exec=` apuntando al
+     binario ya movido.
+   - `~/.local/share/icons/appimages/<slug>.<png|svg>`, referenciado por ruta
+     absoluta en `Icon=` — evita lidiar con convenciones de icon theme
+     (`hicolor/<size>/apps/...`) para un solo icono de tamaño arbitrario.
+
+Si la extracción falla (AppImage corrupta, o no es type-2) el `.desktop` se
+genera igual con metadata mínima (nombre = nombre de archivo, icono genérico)
+en vez de abortar. Pasa un segundo argumento para fijar el `Name` a mano:
+`appimage-install archivo.AppImage "Mi App"`.
+
+Ninguna de las tres rutas está enlazada por `nix/home/dotfiles.nix` — mismo
+motivo que `~/.config/noctalia`: Steam ya escribe sus propios `.desktop` y
+`.png` en esos mismos directorios (ver `Megabonk.desktop` et al.), así que
+enlazar el directorio entero los pisaría o los metería al repo sin querer.
+Son estado local, no fuente de verdad versionada.
+
+**Requisito previo:** correr el binario a secas (`./Algo.AppImage`, lo que
+hace `--appimage-extract` y luego el propio `Exec=` del .desktop) depende de
+`programs.nix-ld` ([`nix/system/gaming.nix`](nix/system/gaming.nix)) para el
+intérprete ELF y las libs de un FHS normal. Si una AppImage en particular
+revienta con una lib que falta, el fix es añadirla a
+`programs.nix-ld.libraries` ahí, no en este script.
 
 ---
 

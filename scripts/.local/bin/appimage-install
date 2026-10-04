@@ -1,0 +1,103 @@
+#!/bin/sh
+# Instala un .AppImage: lo mueve a ~/Applications y genera su .desktop (+
+# icono) para que aparezca en el launcher de noctalia — que, como cualquier
+# lanzador freedesktop, solo lista lo que haya en
+# $XDG_DATA_HOME/applications (~/.local/share/applications).
+#
+# Por qué un script manual y no un daemon (al estilo appimaged/
+# AppImageLauncher): instalar una AppImage es un evento raro, no algo que
+# valga la pena vigilar con un watcher de fondo. Mismo criterio que
+# noctalia-backup: una herramienta que se invoca a propósito.
+#
+# Convención de rutas:
+#   ~/Applications/<archivo>.AppImage              binario final
+#   ~/.local/share/applications/<slug>.desktop     entrada del launcher
+#   ~/.local/share/icons/appimages/<slug>.<ext>    icono extraído
+#
+# El spec de AppImage exige que el .desktop y el icono vivan en la raíz del
+# squashfs interno, extraíble con --appimage-extract. Si esa extracción falla
+# (binario corrupto, o no es un AppImage type-2) seguimos con metadata mínima
+# en vez de abortar: peor es nada en el launcher que un error aquí.
+#
+# Exec NO lleva field code (%u/%U/%f/%F): el parser de desktop entries de
+# noctalia descarta la entrada entera —sin log, sin error, simplemente no
+# cuenta en "refreshed desktop entries: N apps"— si el Exec trae uno. Spec
+# la acepta, noctalia (hoy) no. Confirmado empíricamente: con %U el contador
+# no subía al instalar; sin él, sí.
+set -e
+
+APPDIR="$HOME/Applications"
+DESKDIR="$HOME/.local/share/applications"
+ICONDIR="$HOME/.local/share/icons/appimages"
+
+usage() {
+    echo "uso: appimage-install <archivo.AppImage> [Nombre]" >&2
+    exit 1
+}
+
+SRC=$1
+[ -n "$SRC" ] && [ -f "$SRC" ] || usage
+NAME=$2
+
+chmod +x "$SRC"
+mkdir -p "$APPDIR" "$DESKDIR" "$ICONDIR"
+
+DEST="$APPDIR/$(basename "$SRC")"
+mv -f "$SRC" "$DEST"
+
+WORK=$(mktemp -d)
+trap 'rm -rf "$WORK"' EXIT
+EXTRACTED=0
+if (cd "$WORK" && "$DEST" --appimage-extract >/dev/null 2>&1); then
+    EXTRACTED=1
+fi
+SQUASHFS="$WORK/squashfs-root"
+
+INNER_DESKTOP=$(find "$SQUASHFS" -maxdepth 1 -iname "*.desktop" 2>/dev/null | head -n1)
+
+COMMENT=""
+ICONNAME=""
+CATEGORIES="Utility;"
+TERMINAL="false"
+
+if [ -n "$INNER_DESKTOP" ]; then
+    get() { grep -m1 "^$1=" "$INNER_DESKTOP" | cut -d= -f2-; }
+    [ -z "$NAME" ] && NAME=$(get Name)
+    COMMENT=$(get Comment)
+    ICONNAME=$(get Icon)
+    CATS=$(get Categories); [ -n "$CATS" ] && CATEGORIES="$CATS"
+    TERMVAL=$(get Terminal); [ -n "$TERMVAL" ] && TERMINAL="$TERMVAL"
+fi
+
+[ -z "$NAME" ] && NAME=$(basename "$DEST" .AppImage)
+
+SLUG=$(echo "$NAME" | tr '[:upper:] ' '[:lower:]-' | tr -cd 'a-z0-9-')
+
+ICON="application-x-executable"
+if [ -n "$ICONNAME" ]; then
+    ICONFILE=$(find "$SQUASHFS" \( -iname "$ICONNAME.png" -o -iname "$ICONNAME.svg" \) 2>/dev/null | head -n1)
+    if [ -n "$ICONFILE" ]; then
+        EXT=${ICONFILE##*.}
+        cp "$ICONFILE" "$ICONDIR/$SLUG.$EXT"
+        ICON="$ICONDIR/$SLUG.$EXT"
+    fi
+fi
+
+DESKTOP="$DESKDIR/$SLUG.desktop"
+cat > "$DESKTOP" <<EOF
+[Desktop Entry]
+Type=Application
+Name=$NAME
+Comment=$COMMENT
+Exec=$DEST
+Icon=$ICON
+Terminal=$TERMINAL
+Categories=$CATEGORIES
+EOF
+
+command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database "$DESKDIR" >/dev/null 2>&1
+
+echo "-> $DEST"
+echo "-> $DESKTOP"
+[ "$ICON" = "application-x-executable" ] || echo "-> $ICON"
+[ "$EXTRACTED" = 1 ] || echo "aviso: no se pudo extraer metadata embebida; .desktop con datos mínimos" >&2
