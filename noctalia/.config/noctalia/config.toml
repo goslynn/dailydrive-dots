@@ -19,6 +19,8 @@ order = [ "topbar" ]
 [battery]
 warning_threshold = 20
 
+[calendar]
+
 [control_center]
 sidebar_section = "none"
 width = 750
@@ -57,11 +59,13 @@ widget_order = [ "lockscreen-login-box@HDMI-A-1", "lockscreen-login-box@eDP-1" ]
     visible = true
 
     [lockscreen_widgets.widget."lockscreen-login-box@HDMI-A-1"]
-    box_height = 229.0
+    box_height = 196.0
     box_width = 810.0
     cx = 1536.0
-    cy = 1529.5
+    cy = 1529.4998779296875
     output = "HDMI-A-1"
+    placement_height = 1728.0
+    placement_width = 3072.0
     rotation = 0.0
     type = "login_box"
 
@@ -77,15 +81,19 @@ widget_order = [ "lockscreen-login-box@HDMI-A-1", "lockscreen-login-box@eDP-1" ]
         show_keyboard_layout = true
         show_login_button = true
         show_media = true
+        show_password_reveal = true
         show_session_buttons = true
+        show_unlock_hint = true
         show_weather = true
 
     [lockscreen_widgets.widget."lockscreen-login-box@eDP-1"]
-    box_height = 229.0
+    box_height = 196.0
     box_width = 810.0
-    cx = 1024.0
-    cy = 1081.5
+    cx = 1638.4000244140625
+    cy = 1280.0
     output = "eDP-1"
+    placement_height = 1280.0
+    placement_width = 2048.0
     rotation = 0.0
     type = "login_box"
 
@@ -101,7 +109,9 @@ widget_order = [ "lockscreen-login-box@HDMI-A-1", "lockscreen-login-box@eDP-1" ]
         show_keyboard_layout = true
         show_login_button = true
         show_media = true
+        show_password_reveal = true
         show_session_buttons = true
+        show_unlock_hint = true
         show_weather = true
 
 [nightlight]
@@ -169,6 +179,7 @@ builtin = "Catppuccin"
 community_palette = "Catppuccin Frappe Lavender"
 mode = "dark"
 source = "community"
+wallpaper_scheme = "m3-content"
 
     [theme.templates]
     builtin_ids = [ "btop", "hyprland", "kitty", "starship" ]
@@ -179,13 +190,13 @@ transition = []
 transition_on_startup = true
 
     [wallpaper.default]
-    path = "/home/vgonz/Pictures/Wallpapers/import-4fe31cfb-98b2-458b-a7f4-bb65b060a9b7.png"
+    path = "/home/vgonz/Pictures/Wallpapers/import-3140ae9d-738e-4168-a050-52832d666ecc.png"
 
     [wallpaper.last]
-    path = "/home/vgonz/Pictures/Wallpapers/import-4fe31cfb-98b2-458b-a7f4-bb65b060a9b7.png"
+    path = "/home/vgonz/Pictures/Wallpapers/import-3140ae9d-738e-4168-a050-52832d666ecc.png"
 
     [wallpaper.monitors.eDP-1]
-    path = "/home/vgonz/Pictures/Wallpapers/import-4fe31cfb-98b2-458b-a7f4-bb65b060a9b7.png"
+    path = "/home/vgonz/Pictures/Wallpapers/import-3140ae9d-738e-4168-a050-52832d666ecc.png"
 
 [widget.battery]
 display_mode = "graphic"
@@ -236,6 +247,8 @@ enabled = false
 [widget.workspaces]
 active_pill_size = 2.6000000000000001
 capsule_radius = "auto"
-display = "none"
+focused_output_only = true
 hide_when_empty = true
 inactive_pill_size = 1.3
+show_labels = false
+show_tooltip = false
