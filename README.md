@@ -96,6 +96,7 @@ sudo nixos-rebuild switch --flake ~/.dotfiles#laptop
 | `starship`    | Prompt                                             |
 | `zsh`         | Shell: `.zshrc`, `.zshenv` y módulos (ZDOTDIR en `~/.config/zsh`) |
 | `yazi`        | File manager TUI + plugin `mount` (discos extraíbles) |
+| `nvim`        | Neovim + LazyVim (IDE: Java, Python, JS/TS, HTML/CSS, Go, SQL) |
 | `btop` `mpv`  | Monitor de sistema, reproductor                    |
 | `sioyek`      | Lector de PDF                                      |
 | `brave-origin`| Flags de arranque (Wayland/ozone)                  |
@@ -165,6 +166,53 @@ Aplicar cambios sin reiniciar: `hyprctl reload`. Ver errores:
 `programs.hyprland` añade `/share/hypr` a `environment.pathsToLink` justo para
 esto). Para que lua-ls los cargue, un `.luarc.json` con
 `{"workspace":{"library":["/run/current-system/sw/share/hypr/stubs"]}}`.
+
+### Neovim (LazyVim) — `~/.config/nvim/`
+
+`EDITOR`/`VISUAL` (y por tanto git, lazygit, crontab) abren `nvim`; `vim` es
+alias de `nvim`. El directorio se enlaza con `mkOutOfStoreSymlink` como el
+resto: lazy.nvim reescribe `lazy-lock.json` y `:LazyExtras` reescribe
+`lazyvim.json`, y ambos se versionan.
+
+```
+init.lua                 # require("config.lazy")
+lazyvim.json             # extras activos (lo gestiona :LazyExtras)
+lazy-lock.json           # commit fijado de cada plugin (lo gestiona :Lazy)
+lua/config/
+├── lazy.lua             # bootstrap de lazy.nvim, rocks off, rtp plugins off
+├── options.lua          # basedpyright, scrolloff
+└── keymaps.lua autocmds.lua
+lua/plugins/
+├── colorscheme.lua      # catppuccin-frappe
+├── java.lua             # jdtls arranca con JDK 25, compila con 21
+├── lang-web.lua         # html, cssls, emmet (LazyVim no trae extra)
+├── lang-sql.lua         # postgres_lsp + sqlfluff --dialect=postgres
+├── nix.lua              # LSPs que vienen de Nix, no de Mason
+└── git.lua              # diffview (<leader>gv…)
+```
+
+**Qué viene de dónde.** Nix (`nix/home/packages.nix`) pone el editor y lo que
+LazyVim invoca: `neovim`, `tree-sitter`, `ripgrep`, `fd`, `lazygit`, los
+toolchains, y los LSPs que no funcionan desde Mason (`nil`, `marksman`,
+`statix`, `nixfmt`). El resto de LSPs/DAPs/linters/formatters los instala
+**Mason** en `~/.local/share/nvim/mason` y corren gracias a nix-ld. Si uno
+falla al arrancar (`:LspInfo`, `:Mason`), se pasa a Nix y se marca
+`mason = false` en `lua/plugins/nix.lua`.
+
+**Java.** El jdtls actual exige Java 25 para *arrancar*; los proyectos siguen
+compilando con 21. Los dos JDK se exponen en rutas fijas,
+`~/.local/share/jdks/{21,25}` (`xdg.dataFile` en `packages.nix`), y
+`lua/plugins/java.lua` los registra como runtimes `JavaSE-21` (por defecto) y
+`JavaSE-25`.
+
+**SQL / PostgreSQL.** `<leader>D` abre dadbod-ui; añade una conexión
+`postgresql://user:pass@localhost:5432/db` y el buffer de query completa tablas
+y columnas. Para que `postgres_lsp` haga chequeos contra el esquema, pon un
+`postgres-language-server.jsonc` en la raíz del proyecto.
+
+**Mantenimiento.** `:Lazy` (sync/update), `:Mason` (instalar/actualizar
+herramientas), `:LazyExtras` (activar/desactivar extras), `:checkhealth`.
+Tras actualizar plugins, commitea `lazy-lock.json`.
 
 ### Kitty / btop / mpv / sioyek
 

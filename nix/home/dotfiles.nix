@@ -69,6 +69,12 @@ in
     "mpv".source = link "mpv/.config/mpv";
     "sioyek".source = link "sioyek/.config/sioyek";
 
+    # Neovim (LazyVim). Must be writable for the same reason as above:
+    # lazy.nvim rewrites lazy-lock.json on every :Lazy update and :LazyExtras
+    # rewrites lazyvim.json — both are meant to be committed. Plugins, Mason
+    # tools and treesitter parsers live in ~/.local/share/nvim, not here.
+    "nvim".source = link "nvim/.config/nvim";
+
     # Toolkit theming. Linked file by file, not by directory, on purpose:
     #
     #   ~/.config/gtk-3.0   GTK writes bookmarks (and gtk.css if you ever use a

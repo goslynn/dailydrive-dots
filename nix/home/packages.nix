@@ -15,11 +15,27 @@
     zip
     unzip
     openssl
+    fastfetch
 
     # ── TUI apps with configs in this repo ──
     yazi
     btop
-    micro # EDITOR/VISUAL in .zshenv
+    micro # fallback editor; EDITOR/VISUAL is nvim now
+
+    # ── Neovim (LazyVim, config in nvim/.config/nvim) ──
+    # Only the editor and what LazyVim shells out to come from Nix. LSPs,
+    # DAPs, linters and formatters are installed by Mason into
+    # ~/.local/share/nvim/mason and run through nix-ld (nix/system/gaming.nix);
+    # anything that breaks there moves here instead (see
+    # nvim/.config/nvim/lua/plugins/nix.lua for which ones and why).
+    # ripgrep, fd, fzf, lazygit, gcc, node, python3, go, jdk are already
+    # listed elsewhere in this file and are all used by it too.
+    neovim
+    tree-sitter # nvim-treesitter (main branch) compiles parsers with this CLI
+    nixfmt # conform's formatter for lang.nix
+    statix # nvim-lint's linter for lang.nix
+    marksman # markdown LSP; Mason's .NET build needs libicu
+    trash-cli # snacks explorer moves deletes to the trash instead of rm
 
     # PDF viewer, wrapped for HiDPI under XWayland.
     (callPackage ../pkgs/sioyek-hidpi.nix { })
@@ -81,8 +97,6 @@
     # understand a plain Makefile project (cmake emits one on its own).
     bear
 
-	# AI 
-	openspec 
 	
     # ── Containers ──
     # The docker CLI and daemon come from virtualisation.docker in
@@ -96,12 +110,15 @@
     obsidian
     localsend
     bruno
-    bruno-cli
+    # nixpkgs' bruno-cli lags the app (still 1.16.0 under the v4.0.0 tag);
+    # this builds npm's @usebruno/cli directly instead. See nix/pkgs/bruno-cli.nix.
+    (callPackage ../pkgs/bruno-cli.nix { })
 
     # general software
     spotify
     libreoffice-fresh
     zapzap
+    qbittorrent
 
     # ── Gaming ──
     # Steam, gamemode, nix-ld, 32-bit graphics, and the nixpkgs-pinned
@@ -117,6 +134,15 @@
     # anything dropped there without needing a rebuild.
     protonup-qt
   ];
+
+  # JDKs at fixed paths for Neovim's jdtls (nvim/.config/nvim/lua/plugins/java.lua).
+  # Current jdtls refuses to *run* on anything older than Java 25 (its OSGi
+  # bundles require osgi.ee JavaSE-25), while projects keep building with the
+  # `jdk` above. Linking them here instead of adding jdk25 to home.packages
+  # avoids two bin/java on PATH, and gives jdtls's java.configuration.runtimes
+  # paths that survive a garbage collection.
+  xdg.dataFile."jdks/21".source = pkgs.jdk21.home; # the real JAVA_HOME, lib/openjdk
+  xdg.dataFile."jdks/25".source = pkgs.jdk25.home;
 
   # yazi's mount plugin (bound to `M` in yazi/keymap.toml) is vendored in the
   # repo under yazi/.config/yazi/plugins/mount.yazi and reaches yazi through
