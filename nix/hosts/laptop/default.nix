@@ -73,7 +73,6 @@
       "video"
       "audio"
       "docker" # talk to /run/docker.sock without sudo; see nix/system/services.nix
-      "wireshark" # capture without sudo via dumpcap's setcap wrapper; see nix/system/services.nix
       "libvirtd" # manage VMs without sudo; see nix/system/virtualisation.nix
       # Both "docker" and "libvirtd" are root-equivalent: either socket can be
       # asked to start a container/domain that mounts the host's / read-write.
@@ -85,6 +84,19 @@
   # ── Hardware ─────────────────────────────────────────
   hardware.cpu.amd.updateMicrocode = true;
   hardware.graphics.enable = true; # Mesa/RADV for the 680M
+
+  # Closing the lid suspends fine, but opening it used to power the machine
+  # off. On s2idle wake this firmware fires an ACPI power-button notify, and
+  # tiny_power_button (autoloaded by udev for PNP0C0C next to `button`) turns
+  # that into SIGRTMIN+4 straight to PID 1 — a kernel-side poweroff request
+  # that bypasses logind. journalctl shows "Received SIGRTMIN+4." with no
+  # sender PID right before "Lid opened". Because it lands while user.slice is
+  # still frozen, the shutdown then can't stop the session ("Cannot stop frozen
+  # unit Session N") and hangs on Brave's chrome_crashpad_handler.
+  # Started with the jump to linux 6.18.58 / systemd 262 (generation 39).
+  # Without it the real power key still works through `button` + logind.
+  # https://github.com/NixOS/nixpkgs/issues/577729
+  boot.blacklistedKernelModules = [ "tiny_power_button" ];
 
   # ── Nix ──────────────────────────────────────────────
   nix.settings = {

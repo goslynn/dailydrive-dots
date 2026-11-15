@@ -101,6 +101,17 @@
     recommendedServices.enable = true;
   };
 
+  # noctalia keeps its encrypted storage (clipboard history, calendar
+  # credentials) behind the Secret Service API. With no provider on the bus,
+  # every start logs `[secret-store] ... status=unavailable
+  # category=provider-unavailable` and those features stay off. gnome-keyring
+  # provides org.freedesktop.secrets. The module adds pam_gnome_keyring to
+  # /etc/pam.d/login, which /etc/pam.d/greetd pulls in as a substack, so the
+  # password typed into the greeter unlocks the login collection — no prompt.
+  # Brave is unaffected: under XDG_CURRENT_DESKTOP=Hyprland Chromium's
+  # autodetection keeps its "basic" password store.
+  services.gnome.gnome-keyring.enable = true;
+
   # ── Fonts ────────────────────────────────────────────
   fonts.packages = with pkgs; [
     nerd-fonts.caskaydia-cove # kitty.conf: CaskaydiaCove Nerd Font
