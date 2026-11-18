@@ -116,6 +116,13 @@ in
     # See CLAUDE.md §1.
   };
 
+  # Local noctalia plugin: minimized-windows widget and SUPER+TAB switcher
+  # (bar.bottombar, paired with hypr/conf.d/minimize.lua). Unlike the config,
+  # plugins are plain files noctalia only reads, so linking the directory is
+  # safe; the out-of-store link keeps .luau edits hot-reloading from the repo.
+  xdg.dataFile."noctalia/plugins/minimized".source =
+    link "noctalia/.local/share/noctalia/plugins/minimized";
+
   # ~/.local/bin — noctalia-backup. It resolves the repo with
   # `readlink -f "$0"`, which still lands in ~/.dotfiles through this symlink,
   # so the script works unchanged.

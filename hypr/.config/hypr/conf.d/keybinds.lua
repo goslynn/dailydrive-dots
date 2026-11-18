@@ -8,6 +8,10 @@ local programs = require("programs")
 -- layout counter. Requiring it here does not re-apply its hl.config().
 local input = require("input")
 
+-- Same deal: hyprland.lua loads minimize.lua first (it registers the restore
+-- hook), and this only reads its workspace name.
+local minimize = require("minimize")
+
 local mainMod = "SUPER"
 
 -- ── Apps ─────────────────────────────────────────────
@@ -36,6 +40,19 @@ hl.bind(mainMod .. " + Q", hl.dsp.window.close())
 hl.bind(mainMod .. " + W", hl.dsp.window.float({ action = "toggle" }))
 hl.bind(mainMod .. " + P", hl.dsp.window.pseudo())
 hl.bind(mainMod .. " + J", hl.dsp.layout("togglesplit"))
+-- Minimize: off to the hidden workspace, focus stays here. Restore from the
+-- noctalia bottom bar of minimized apps — see minimize.lua.
+hl.bind(mainMod .. " + N", hl.dsp.window.move({ workspace = minimize.workspace, follow = false }))
+-- Restore by keyboard, alt+tab style: hold SUPER, TAB to pick (SHIFT+TAB
+-- goes back), let go of SUPER to restore, ESC to back out. The release is
+-- detected in minimize.lua, not bound here — see the note there.
+hl.bind(mainMod .. " + Tab", minimize.switch_start)
+hl.define_submap(minimize.switcher, function()
+    hl.bind(mainMod .. " + Tab",         minimize.switch_step(1))
+    hl.bind(mainMod .. " + SHIFT + Tab", minimize.switch_step(-1))
+    hl.bind("Escape",               minimize.switch_cancel)
+    hl.bind(mainMod .. " + Escape", minimize.switch_cancel)
+end)
 hl.bind(mainMod .. " + SHIFT + F", hl.dsp.window.fullscreen({ mode = "maximized" }))
 hl.bind(mainMod .. " + CTRL + F",  hl.dsp.window.fullscreen({ mode = "fullscreen" }))
 

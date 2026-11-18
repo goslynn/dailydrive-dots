@@ -1,0 +1,24 @@
+# Minimized windows: a bar widget with one icon per window parked on
+# Hyprland's special:minimized workspace, and nothing else; it also draws the
+# SUPER+TAB switcher's selection. Lives on the bottom bar (bar.bottombar in
+# ~/.config/noctalia).
+#
+# The list comes from `hyprctl clients -j`. Hyprland pokes the widget whenever
+# a window moves or closes (hypr/conf.d/minimize.lua), so there is no polling:
+#   noctalia msg plugin vgonz/minimized:bar all refresh
+
+id = "vgonz/minimized"
+name = "Minimized"
+version = "1.2.0"
+plugin_api = 34
+author = "vgonz"
+license = "MIT"
+dependencies = ["hyprctl"]
+tags = ["bar", "compositor"]
+icon = "app-window"
+description = "Taskbar that only lists windows minimized to Hyprland's special:minimized workspace."
+
+[[widget]]
+id = "bar"
+entry = "bar.luau"
+

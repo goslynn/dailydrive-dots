@@ -28,6 +28,7 @@ require("input")
 -- Runtime
 require("autostart")
 require("rules")
+require("minimize")
 require("keybinds")
 
 -- For Noctalia Color templates.
